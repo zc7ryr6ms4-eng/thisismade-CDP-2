@@ -81,10 +81,26 @@ h2{font-weight:300;font-size:clamp(28px,3.6vw,40px);line-height:1.1;letter-spaci
 .flist h4{margin:0 0 6px;font-weight:500;font-size:17px}
 .flist p{margin:0;color:var(--dim);font-size:15px}
 
+/* Projekte */
+.proj{background:var(--bg2);border-top:1px solid var(--line)}
+.pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.card .pic{position:relative;aspect-ratio:16/9;background:#0e1112}
+.card .pic img{position:absolute;inset:14px;width:calc(100% - 28px);height:calc(100% - 28px);object-fit:contain}
+.card .body{padding:20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h3{margin:0;font-weight:400;font-size:20px}
+.card p{margin:0;color:var(--dim);font-size:15px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+.pill{font-size:13px;color:var(--dim);border:1px solid var(--line);border-radius:12px;padding:2px 10px;white-space:nowrap}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+.links a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--line);text-decoration:none;font-size:14px}
+.links a:hover{border-color:#56615f}
+.links a.go{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+
 footer{border-top:1px solid var(--line);padding:28px max(5vw,16px);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:14px}
 footer a{color:var(--ink)}
 
-@media(max-width:900px){.player .wrap{grid-template-columns:minmax(0,1fr)}.grid{grid-template-columns:minmax(0,1fr)}.flist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.player .wrap{grid-template-columns:minmax(0,1fr)}.grid,.pgrid{grid-template-columns:minmax(0,1fr)}.flist{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.hero{min-height:0;background:var(--bg) url("bg.jpg") center 64px/130% auto no-repeat;padding-top:calc(73vw + 64px)}.hero::after{background:linear-gradient(to bottom,rgba(21,25,27,0) 0,rgba(21,25,27,0) calc(73vw - 30px),var(--bg) calc(73vw + 64px))}.hero-text{grid-template-columns:minmax(0,1fr)}.flist{grid-template-columns:minmax(0,1fr)}nav li:not(.keep){display:none}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 </style>
@@ -98,6 +114,7 @@ footer a{color:var(--ink)}
       <li><a href="#player">Player</a></li>
       <li class="keep"><a href="#download">Download</a></li>
       <li><a href="#funktionen">Funktionen</a></li>
+      <li><a href="#projekte">Projekte</a></li>
       <li><a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2" target="_blank" rel="noopener">GitHub</a></li>
     </ul>
   </nav>
@@ -142,6 +159,14 @@ footer a{color:var(--ink)}
   </div>
 </section>
 
+<section class="band proj" id="projekte">
+  <div class="wrap">
+    <h2><span class="br">[</span>Projekte auf GitHub</h2>
+    <p class="hint">Alle beliebten Repositories von thisismade, mit Quellcode und Downloads.</p>
+    <div class="pgrid" id="pgrid"></div>
+  </div>
+</section>
+
 <footer>
   <span>© 2026 thisismade · thisismade cdp-2 · BSD-3-Clause</span>
   <span><a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2" target="_blank" rel="noopener">Quellcode auf GitHub</a> · <a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2/issues" target="_blank" rel="noopener">Fehler melden</a></span>
@@ -180,6 +205,36 @@ footer a{color:var(--ink)}
     ["Rotes Display", "Titel als Laufschrift, Zeit, Restzeit, Auflösung, Tempo, Lautstärke und Pegel L/R."],
     ["Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von Windows, macOS und GNOME."]
   ];
+
+
+  const GH = "https://github.com/zc7ryr6ms4-eng/";
+  const projects = [
+    { repo: "thisismade-CDP-2", title: "thisismade cdp-2", img: "player.png",
+      alt: "Gerätefront von thisismade cdp-2",
+      text: "Die aktuelle CD-Player-Software mit drehender Disc, rotem Display, Tempo, Key Lock und Memory-Cues.",
+      tags: ["Python", "Swift", "C#", "Windows · macOS · Linux"], rel: true },
+    { repo: "thisismade-compressor-VST3", title: "thisismade Compressor", img: "compressor.jpg",
+      alt: "Bedienoberfläche des thisismade Compressor-Plugins",
+      text: "Diode-Bridge-Limiter und -Kompressor als VST3, AU und Standalone, nach dem Vorbild des 33609, mit allen Reglern und Auto Gain.",
+      tags: ["C++", "JUCE 8", "VST3 · AU"], rel: false },
+    { repo: "thisismade-CDP-1", title: "thisismade CDP-1", img: "cdp1.jpg",
+      alt: "Gerätefront der ersten Version",
+      text: "Die erste Version des CD-Players („Thisismade CD Player“) mit weißer Front, als Archiv.",
+      tags: ["Python", "Swift", "C#", "Archiv"], rel: true }
+  ];
+  document.getElementById("pgrid").innerHTML = projects.map(p => `
+    <article class="card">
+      <div class="pic"><img src="${p.img}" alt="${p.alt}"></div>
+      <div class="body">
+        <h3>${p.title}</h3>
+        <p>${p.text}</p>
+        <div class="meta">${p.tags.map(t => `<span class="pill">${t}</span>`).join("")}</div>
+        <div class="links">
+          <a class="go" href="${GH + p.repo}" target="_blank" rel="noopener">Repository</a>
+          ${p.rel ? `<a href="${GH + p.repo}/releases" target="_blank" rel="noopener">Downloads</a>` : `<a href="${GH + p.repo}/actions" target="_blank" rel="noopener">Builds</a>`}
+        </div>
+      </div>
+    </article>`).join("");
 
   const ua = navigator.userAgent || "";
   const mine = /Windows/i.test(ua) ? "win" : /Mac OS X|Macintosh/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "lin" : "";

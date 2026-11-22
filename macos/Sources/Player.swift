@@ -8,6 +8,7 @@ struct Track {
     var title: String
     var artist: String?
     var album: String?
+    var resolution: String?
 }
 
 final class Player {
@@ -430,6 +431,11 @@ final class Player {
         Task { [weak self] in
             let asset = AVURLAsset(url: url)
             var title: String?, artist: String?, album: String?, art: Data?
+            var kbps: Int?
+            if let tr = try? await asset.loadTracks(withMediaType: .audio).first,
+               let rate = try? await tr.load(.estimatedDataRate), rate > 0 {
+                kbps = Int((rate / 1000).rounded())
+            }
             if let items = try? await asset.load(.commonMetadata) {
                 for item in items {
                     switch item.commonKey {
@@ -446,11 +452,52 @@ final class Player {
                 if let t = title, !t.isEmpty { self.tracks[i].title = t }
                 self.tracks[i].artist = artist
                 self.tracks[i].album = album
+                self.tracks[i].resolution = Player.resolutionText(url, kbps: kbps)
                 self.setCover(art ?? self.folderCover(url))
                 self.updateDisc()
                 self.updateNowPlaying()
             }
         }
+    }
+
+    /// z. B. "44.1 kHz · 24 bit · FLAC" oder "44.1 kHz · 256 kbps · M4A".
+    static func resolutionText(_ url: URL, kbps: Int?) -> String {
+        var parts: [String] = []
+        let ext = url.pathExtension.uppercased()
+        if let f = try? AVAudioFile(forReading: url) {
+            let d = f.fileFormat.streamDescription.pointee
+            if d.mSampleRate > 0 {
+                var khz = String(format: "%.1f", d.mSampleRate / 1000)
+                if khz.hasSuffix(".0") { khz.removeLast(2) }
+                parts.append(khz + " kHz")
+            }
+            var bits = 0
+            if d.mFormatID == kAudioFormatLinearPCM {
+                bits = Int(d.mBitsPerChannel)
+            } else if d.mFormatID == kAudioFormatAppleLossless || d.mFormatID == kAudioFormatFLAC {
+                switch d.mFormatFlags {
+                case 1: bits = 16
+                case 2: bits = 20
+                case 3: bits = 24
+                case 4: bits = 32
+                default: bits = 0
+                }
+            }
+            if bits > 0 {
+                parts.append("\(bits) bit")
+            } else if let k = kbps, k > 0 {
+                parts.append("\(k) kbps")
+            }
+        }
+        if !ext.isEmpty { parts.append(ext) }
+        return parts.joined(separator: " · ")
+    }
+
+    private func titleText() -> String {
+        guard hasTracks else { return "" }
+        let t = tracks[index]
+        let s = (t.artist?.isEmpty == false) ? "\(t.artist!) – \(t.title)" : t.title
+        return s.uppercased()
     }
 
     private func folderCover(_ url: URL) -> Data? {
@@ -615,6 +662,8 @@ final class Player {
         s.shuffle = shuffle
         s.paused = engine.state == .paused
         s.remain = timeMode == 1
+        s.title = titleText()
+        s.resolution = hasTracks ? (tracks[index].resolution ?? "") : ""
         return s
     }
 

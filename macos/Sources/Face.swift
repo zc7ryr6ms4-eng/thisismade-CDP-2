@@ -36,6 +36,8 @@ struct FaceState {
     var shuffle = false
     var paused = false
     var remain = false
+    var title = ""
+    var resolution = ""
 }
 
 enum Face {
@@ -214,33 +216,66 @@ enum Face {
         for (i, ch) in text.enumerated() { digit(c, x + CGFloat(i) * pitch, y, w, h, ch) }
     }
 
-    // ------------------------------------------------------------- Bauteile
-    enum Style { case key, small, amber }
+    // ------------------------------------------------------------- Minimal-Design
+    static let body = RGB(0.955, 0.955, 0.95)
+    static let line = RGB(0.74, 0.74, 0.75)
+    static let dot = RGB(0.80, 0.80, 0.81)
+    static let ink = RGB(0.12, 0.12, 0.13)
+    static let keyCol = RGB(0.985, 0.985, 0.98)
+    static let keyHi = RGB(0.90, 0.90, 0.90)
+    static let orange = RGB(1.0, 0.40, 0.0)
+    static let orangeDim = RGB(0.86, 0.80, 0.75)
 
-    @discardableResult
-    static func button(_ c: CGContext, _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat, _ pressed: Bool,
-                       _ style: Style = .key, _ label: String? = nil, _ size: CGFloat = 13, led: Bool? = nil,
-                       r: CGFloat = 7) -> CGFloat {
-        let pal: (RGB, RGB, RGB, RGB)
-        switch style {
-        case .key: pal = (RGB(0.99, 0.99, 0.99), RGB(0.90, 0.90, 0.91), RGB(0.70, 0.70, 0.72), RGB(0.18, 0.18, 0.20))
-        case .small: pal = (RGB(0.95, 0.95, 0.96), RGB(0.87, 0.87, 0.88), RGB(0.68, 0.68, 0.70), RGB(0.30, 0.30, 0.32))
-        case .amber: pal = (RGB(1.0, 0.66, 0.24), RGB(0.95, 0.52, 0.08), RGB(0.55, 0.28, 0.03), RGB(0.16, 0.10, 0.04))
+    static func mono(_ c: CGContext, _ s: String, _ x: CGFloat, _ y: CGFloat, _ size: CGFloat,
+                     _ col: RGB = txtDim, align: Align = .left) {
+        let font = NSFont.monospacedSystemFont(ofSize: size, weight: .regular)
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor(cgColor: col.cg()) ?? .black]
+        let str = NSAttributedString(string: s, attributes: attrs)
+        let w = str.size().width
+        var px = x
+        switch align {
+        case .center: px -= w / 2
+        case .right: px -= w
+        case .left: break
         }
-        let (top, bot, side, fg) = pal
-        let oy: CGFloat = pressed ? 2 : 0
-        rrect(c, x, y + 3, w, h, r); fill(c, RGB(0, 0, 0), 0.16)
-        rrect(c, x, y + oy, w, h - oy + 1, r); fill(c, side)
-        rrect(c, x, y + oy, w, h - 3, r); fillV(c, y, y + h, top, bot)
-        c.addRect(CGRect(x: x + r, y: y + oy + 0.6, width: w - 2 * r, height: 1)); fill(c, RGB(1, 1, 1), 0.6)
-        if let label = label {
-            text(c, label, x + w / 2, y + oy + (h - 3) / 2 + size * 0.36, size, fg)
-        }
-        if let led = led {
-            circle(c, x + w - 10, y + oy + 10, 3.2)
-            fill(c, led ? ledOn : RGB(0.80, 0.80, 0.81))
-        }
-        return oy
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: c, flipped: true)
+        str.draw(at: NSPoint(x: px, y: y - font.ascender))
+        NSGraphicsContext.restoreGraphicsState()
+    }
+
+    static func stroke(_ c: CGContext, _ col: RGB, _ w: CGFloat = 1) {
+        c.setStrokeColor(col.cg())
+        c.setLineWidth(w)
+        c.strokePath()
+    }
+
+    /// Füllt und umrandet den Pfad, den `shape` anlegt.
+    static func fillStroke(_ c: CGContext, _ fillCol: RGB, _ edge: RGB, _ w: CGFloat = 1, _ shape: () -> Void) {
+        shape(); fill(c, fillCol)
+        shape(); stroke(c, edge, w)
+    }
+
+    static func ln(_ c: CGContext, _ x0: CGFloat, _ y0: CGFloat, _ x1: CGFloat, _ y1: CGFloat,
+                   _ col: RGB = line, _ w: CGFloat = 1) {
+        c.beginPath()
+        c.move(to: CGPoint(x: x0, y: y0))
+        c.addLine(to: CGPoint(x: x1, y: y1))
+        stroke(c, col, w)
+    }
+
+    static func led(_ c: CGContext, _ x: CGFloat, _ y: CGFloat, _ on: Bool) {
+        c.addRect(CGRect(x: x - 3, y: y - 3, width: 6, height: 6))
+        fill(c, on ? orange : orangeDim)
+    }
+
+    static func roundKey(_ c: CGContext, _ cx: CGFloat, _ cy: CGFloat, _ r: CGFloat, _ pressed: Bool, _ col: RGB) {
+        fillStroke(c, pressed ? orange : col, pressed ? orange : line) { circle(c, cx, cy, r) }
+    }
+
+    static func squareKey(_ c: CGContext, _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ h: CGFloat,
+                          _ pressed: Bool, _ col: RGB, _ r: CGFloat = 6) {
+        fillStroke(c, pressed ? orange : col, pressed ? orange : line) { rrect(c, x, y, w, h, r) }
     }
 
     static func tri(_ c: CGContext, _ pts: [CGPoint]) {
@@ -269,72 +304,159 @@ enum Face {
         }
     }
 
-    static func knob(_ c: CGContext, _ value: CGFloat) {
-        let cx = knobC.x, cy = knobC.y
-        for i in 0..<21 {
-            let a = (225 - 13.5 * CGFloat(i)) * .pi / 180
-            let r0 = knobR + 7, r1 = knobR + (i % 5 == 0 ? 13 : 10)
-            let a2 = a + 0.015
-            let p1 = CGPoint(x: cx + cos(a) * r0, y: cy - sin(a) * r0)
-            let p2 = CGPoint(x: cx + cos(a) * r1, y: cy - sin(a) * r1)
-            let p3 = CGPoint(x: cx + cos(a2) * r1, y: cy - sin(a2) * r1)
-            let p4 = CGPoint(x: cx + cos(a2) * r0, y: cy - sin(a2) * r0)
-            c.beginPath()
-            c.addLines(between: [p1, p2, p3, p4])
-            c.closePath()
-            fill(c, txtDim)
-        }
-        circle(c, cx, cy + 4, knobR); fill(c, RGB(0, 0, 0), 0.2)
-        circle(c, cx, cy, knobR); fillV(c, cy - knobR, cy + knobR, RGB(0.96, 0.96, 0.97), RGB(0.78, 0.78, 0.80))
-        circle(c, cx, cy, knobR - 7)
-        fillRadial(c, CGPoint(x: cx - 12, y: cy - 14), 4, CGPoint(x: cx, y: cy), knobR - 7,
-                   [(0, RGB(1, 1, 1)), (1, RGB(0.90, 0.90, 0.91))])
-        let a = (225 - 270 * max(0, min(1, value))) * .pi / 180
-        let ca = cos(a), sa = sin(a), px = -sa, py = -ca
-        let r0: CGFloat = 12, r1 = knobR - 10
-        let q1 = CGPoint(x: cx + ca * r0 + px * 2, y: cy - sa * r0 + py * 2)
-        let q2 = CGPoint(x: cx + ca * r1 + px * 2, y: cy - sa * r1 + py * 2)
-        let q3 = CGPoint(x: cx + ca * r1 - px * 2, y: cy - sa * r1 - py * 2)
-        let q4 = CGPoint(x: cx + ca * r0 - px * 2, y: cy - sa * r0 - py * 2)
-        c.beginPath()
-        c.addLines(between: [q1, q2, q3, q4])
-        c.closePath()
-        fill(c, amber)
+
+    // ------------------------------------------------------------- Gesamtbild
+    static func draw(_ c: CGContext, _ st: FaceState) {
+        drawStatic(c)
+        drawDynamic(c, st)
     }
 
-    static func fader(_ c: CGContext, _ value: CGFloat) {
-        let x = faderX
-        for i in 0..<9 {
-            let y = faderY1 - CGFloat(i) * (faderY1 - faderY0) / 8
-            c.addRect(CGRect(x: x - 30, y: y - 0.6, width: i == 4 ? 16 : 12, height: 1.2))
-            fill(c, i == 4 ? amber : txtDim)
+    static func drawStatic(_ c: CGContext) {
+        rrect(c, 0, 6, devW, devH, 14); fill(c, RGB(0, 0, 0), 0.18)
+        fillStroke(c, body, RGB(0.80, 0.80, 0.81), 1.2) { rrect(c, 0, 0, devW, devH, 14) }
+
+        for j in stride(from: CGFloat(13), to: devH - 8, by: 16) {
+            for i in stride(from: CGFloat(13), to: 600, by: 16) {
+                if hypot(i - discC.x, j - discC.y) < wellR + 10 { continue }
+                circle(c, i, j, 1.1)
+            }
         }
-        rrect(c, x - 4, faderY0 - 8, 8, faderY1 - faderY0 + 16, 4); fill(c, RGB(0.30, 0.30, 0.32))
-        let cy = faderY1 - max(0, min(1, value)) * (faderY1 - faderY0)
-        rrect(c, x - 22, cy - 11, 44, 26, 4); fill(c, RGB(0, 0, 0), 0.2)
-        rrect(c, x - 22, cy - 14, 44, 28, 4); fillV(c, cy - 14, cy + 14, RGB(1, 1, 1), RGB(0.86, 0.86, 0.87))
-        c.addRect(CGRect(x: x - 18, y: cy - 1, width: 36, height: 2)); fill(c, amber)
+        fill(c, dot)
+
+        ln(c, 610, 14, 610, devH - 14)
+        ln(c, 620, 255, devW - 14, 255)
+        ln(c, 620, 392, devW - 14, 392)
+        ln(c, 620, 578, 1075, 578)
+        ln(c, 1075, 255, 1075, devH - 14)
+
+        text(c, "thisismade", 30, 44, 24, ink, align: .left, bold: true)
+        mono(c, "CDP-2 / COMPACT DISC PLAYER", 31, 62, 10)
+        rrect(c, 520, 34, 54, 14, 7); stroke(c, orange)
+        mono(c, "AUDIO", 547, 45, 9, orange, align: .center)
+
+        let cx = discC.x, cy = discC.y
+        fillStroke(c, RGB(0.90, 0.90, 0.895), line) { circle(c, cx, cy, wellR) }
+        for rr in stride(from: CGFloat(80), to: wellR - 6, by: 18) {
+            circle(c, cx, cy, rr); stroke(c, RGB(0.84, 0.84, 0.84))
+        }
+        for k in 0..<12 {
+            let a = 2 * CGFloat.pi * CGFloat(k) / 12
+            ln(c, cx + cos(a) * (wellR - 10), cy + sin(a) * (wellR - 10),
+               cx + cos(a) * (wellR - 2), cy + sin(a) * (wellR - 2), txtDim)
+        }
+
+        let d = display
+        fillStroke(c, RGB(0.06, 0.05, 0.045), RGB(0.55, 0.55, 0.56)) {
+            rrect(c, d.minX - 4, d.minY - 4, d.width + 8, d.height + 8, 8)
+        }
+
+        let labels: [(String, CGFloat, CGFloat)] = [
+            ("01  NUMBER", 630, 266), ("02  VOLUME", 1086, 268), ("03  MEMORY", 630, 406),
+            ("04  SHUTTLE", 890, 406), ("05  TRANSPORT", 630, 476), ("06  TEMPO", 1086, 406),
+            ("07  MODE", 630, 588)]
+        for (t, tx, ty) in labels { mono(c, t, tx, ty, 9) }
+    }
+
+    static func drawDynamic(_ c: CGContext, _ st: FaceState) {
+        let P = st.pressed, on = st.powerOn
+
+        for (id, t, x) in topBtns {
+            let pr = P.contains(id)
+            fillStroke(c, pr ? orange : body, (pr || id == "power") ? orange : line) {
+                rrect(c, x, topY, topW, topH - 2, 12)
+            }
+            mono(c, t.lowercased(), x + topW / 2, topY + 16, 10,
+                 pr ? body : (id == "power" ? orange : ink), align: .center)
+        }
+        led(c, 1146, 31, st.mediaLED && on)
+        mono(c, "media", 1155, 35, 8)
+
+        if st.discLoaded {
+            disc(c, st)
+        } else {
+            c.saveGState()
+            c.translateBy(x: discC.x, y: discC.y)
+            c.rotate(by: st.discAngle)
+            spindle(c)
+            c.restoreGState()
+            mono(c, "no disc", discC.x, discC.y + 70, 13, ink, align: .center)
+            mono(c, "open / files / drop", discC.x, discC.y + 90, 10, align: .center)
+        }
+
+        drawDisplay(c, st)
+
+        for (lab, x, y) in keys {
+            let cx = x + keyW / 2, cy = y + keyH / 2 + 6
+            let pr = P.contains("key_" + lab)
+            roundKey(c, cx, cy, 19, pr, (lab == "T" || lab == "C") ? keyHi : keyCol)
+            let t = lab == "T" ? "time" : (lab == "C" ? "clr" : lab)
+            mono(c, t, cx, cy + (t.count == 1 ? 5 : 3.5), t.count == 1 ? 15 : 10, pr ? body : ink, align: .center)
+        }
+        let pe = P.contains("enter")
+        squareKey(c, enter.minX, enter.minY + 12, enter.width, enter.height - 14, pe, keyHi, 10)
+        mono(c, "enter", enter.midX, enter.minY + 12 + (enter.height - 14) / 2 + 4, 11, pe ? body : orange, align: .center)
+
+        knob(c, st.levelNorm)
+
+        for (i, m) in mem.enumerated() {
+            let pr = P.contains(m.0)
+            squareKey(c, m.2, memY + 2, memW, memH - 6, pr, keyCol, 8)
+            mono(c, m.1.lowercased(), m.2 + 16, memY + 28, 15, pr ? body : ink)
+            led(c, m.2 + memW - 14, memY + 19, st.cueSet[i] && on)
+        }
+
+        let s = shuttle
+        let scy = s.minY + s.height / 2 + 2
+        ln(c, s.minX, scy, s.maxX, scy, line, 2)
+        for k in -3...3 {
+            let tx = s.midX + CGFloat(k) * s.width / 7
+            ln(c, tx, scy - 6, tx, scy + 6, k == 0 ? orange : txtDim)
+        }
+        mono(c, "rew", s.minX, s.maxY + 12, 9)
+        mono(c, "ff", s.maxX, s.maxY + 12, 9, align: .right)
+        let jx = s.midX + st.jog * jogTravel
+        c.addRect(CGRect(x: jx - 10, y: scy - 12, width: 20, height: 24)); fill(c, orange)
+
+        fader(c, st.varispeedNorm)
+
+        for (id, x, w) in transport {
+            let pr = P.contains(id), play = id == "play"
+            squareKey(c, x, trY + 6, w, trH - 12, pr, play ? orange : keyCol, 12)
+            icon(c, id, x + w / 2, trY + trH / 2, (pr || play) ? body : ink)
+        }
+
+        for (id, t, x) in small {
+            let pr = P.contains(id)
+            let ledState: Bool?
+            switch id {
+            case "keylock": ledState = st.keyLock
+            case "repeat": ledState = st.repeatMode > 0
+            case "shuffle": ledState = st.shuffle
+            default: ledState = nil
+            }
+            fillStroke(c, pr ? orange : body, pr ? orange : line) { rrect(c, x, smallY + 12, smallW, smallH - 8, 13) }
+            mono(c, t.lowercased(), x + smallW / 2 - (ledState != nil ? 6 : 0), smallY + 29, 9,
+                 pr ? body : ink, align: .center)
+            if let l = ledState { led(c, x + smallW - 12, smallY + 25, l && on) }
+        }
+
+        if !on {
+            rrect(c, 0, 0, devW, devH, 14); fill(c, RGB(0, 0, 0), 0.12)
+        }
     }
 
     static func spindle(_ c: CGContext) {
-        circle(c, 0, 0, 30); fillV(c, -30, 30, RGB(0.80, 0.80, 0.82), RGB(0.45, 0.45, 0.47))
-        circle(c, 0, 0, 22); fillV(c, -22, 22, RGB(0.40, 0.40, 0.42), RGB(0.75, 0.75, 0.77))
-        for i in 0..<3 {
-            let a = CGFloat(i) * 2 * .pi / 3 + 0.3
-            circle(c, cos(a) * 14, sin(a) * 14, 3.2); fill(c, RGB(0.95, 0.95, 0.96))
-        }
-        circle(c, 0, 0, 5); fill(c, RGB(0.15, 0.15, 0.16))
+        fillStroke(c, RGB(0.86, 0.86, 0.86), line) { circle(c, 0, 0, 26) }
+        circle(c, 0, 0, 7); fill(c, orange)
     }
 
     static func disc(_ c: CGContext, _ st: FaceState) {
-        circle(c, discC.x + 3, discC.y + 8, discR); fill(c, RGB(0, 0, 0), 0.5)
         c.saveGState()
         c.translateBy(x: discC.x, y: discC.y)
         c.rotate(by: st.discAngle)
-        circle(c, 0, 0, discR)
-        fillRadial(c, CGPoint(x: -60, y: -80), 10, .zero, discR,
-                   [(0, RGB(0.86, 0.87, 0.89)), (0.7, RGB(0.66, 0.67, 0.70)), (1, RGB(0.78, 0.79, 0.82))])
-        let pr = discR - 4
+        circle(c, 0, 2, discR); fill(c, RGB(0, 0, 0), 0.10)
+        fillStroke(c, RGB(0.995, 0.995, 0.99), line) { circle(c, 0, 0, discR) }
+        let pr = discR - 2
         if let cover = st.cover {
             c.saveGState()
             circle(c, 0, 0, pr)
@@ -345,129 +467,51 @@ enum Face {
             c.draw(cover, in: CGRect(x: 0, y: 0, width: 2 * pr, height: 2 * pr))
             c.restoreGState()
         } else {
-            let col = st.discColor
-            circle(c, 0, 0, pr); fill(c, col)
-            let ink = col.sum > 1.8 ? RGB(0.12, 0.12, 0.13) : RGB(0.95, 0.94, 0.90)
-            for rr in [discR - 22, discR - 27, hubR + 24] {
-                circle(c, 0, 0, rr); fill(c, ink, 0.4)
-                circle(c, 0, 0, rr - 1.2); fill(c, col)
-            }
+            let inkD = RGB(0.10, 0.10, 0.11)
+            circle(c, 0, 0, discR - 14); stroke(c, RGB(0.80, 0.80, 0.81))
+            circle(c, 0, 0, hubR + 30); stroke(c, RGB(0.80, 0.80, 0.81))
             let lines = st.discLines
-            if let first = lines.first { text(c, String(first.prefix(22)), 0, -128, 22, ink, bold: true) }
-            for (i, ln) in lines.dropFirst().prefix(4).enumerated() {
-                text(c, String(ln.prefix(30)), 0, -100 + CGFloat(i) * 16, 12, ink)
+            if let first = lines.first { text(c, String(first.prefix(22)).lowercased(), -150, -120, 22, inkD, align: .left, bold: true) }
+            for (i, l) in lines.dropFirst().prefix(4).enumerated() {
+                mono(c, String(l.prefix(30)).lowercased(), -150, -96 + CGFloat(i) * 15, 10, RGB(0.30, 0.30, 0.32))
             }
-            text(c, "thisismade", 0, 150, 18, ink)
-            text(c, "COMPACT DISC · DIGITAL AUDIO", 0, 170, 9, ink)
-            circle(c, 150, 0, 6); fill(c, amber)
+            mono(c, "thisismade / cdp-2", -150, 170, 10, inkD)
+            c.addRect(CGRect(x: discR - 40, y: -5, width: 24, height: 10)); fill(c, orange)
         }
-        circle(c, 0, 0, hubR); fill(c, RGB(0.55, 0.57, 0.60))
-        circle(c, 0, 0, hubR - 3); fill(c, RGB(0.30, 0.31, 0.33))
+        fillStroke(c, RGB(0.93, 0.93, 0.93), line) { circle(c, 0, 0, hubR) }
         spindle(c)
         c.restoreGState()
     }
 
-    // ------------------------------------------------------------- Gesamtbild
-    static func draw(_ c: CGContext, _ st: FaceState) {
-        drawStatic(c)
-        drawDynamic(c, st)
+    static func knob(_ c: CGContext, _ value: CGFloat) {
+        // mittig im Kasten "02 VOLUME" (x 1075…1186, y 255…392), samt Skala
+        let cx: CGFloat = 1131, cy: CGFloat = 331, r: CGFloat = 33
+        for i in 0..<31 {
+            let a = (225 - 9 * CGFloat(i)) * .pi / 180
+            let r0 = r + 5, r1 = r + (i % 5 == 0 ? 12 : 8)
+            let lit = CGFloat(i) / 30 <= value + 1e-6
+            ln(c, cx + cos(a) * r0, cy - sin(a) * r0, cx + cos(a) * r1, cy - sin(a) * r1,
+               lit ? orange : line, i % 5 == 0 ? 1.4 : 1)
+        }
+        fillStroke(c, keyCol, line) { circle(c, cx, cy, r) }
+        let a = (225 - 270 * max(0, min(1, value))) * .pi / 180
+        c.setLineCap(.round)
+        ln(c, cx + cos(a) * 10, cy - sin(a) * 10, cx + cos(a) * (r - 6), cy - sin(a) * (r - 6), orange, 3)
+        c.setLineCap(.butt)
     }
 
-    static func drawStatic(_ c: CGContext) {
-        rrect(c, 0, 10, devW, devH, 18); fill(c, RGB(0, 0, 0), 0.22)
-        rrect(c, 0, 0, devW, devH, 18); fillV(c, 0, devH, RGB(0.985, 0.985, 0.98), RGB(0.90, 0.90, 0.90))
-        c.addRect(CGRect(x: 18, y: 1, width: devW - 36, height: 1.2)); fill(c, RGB(1, 1, 1), 0.9)
-
-        text(c, "thisismade", 40, 42, 24, RGB(0.12, 0.12, 0.13), align: .left, bold: true)
-        text(c, "CD PLAYER  ·  CDP-2", 184, 41, 12, txtDim, align: .left)
-
-        let cx = discC.x, cy = discC.y
-        circle(c, cx, cy, wellR + 3); fill(c, RGB(0.80, 0.80, 0.81))
-        circle(c, cx, cy, wellR)
-        fillRadial(c, CGPoint(x: cx, y: cy - 40), 40, discC, wellR, [(0, RGB(0.10, 0.10, 0.11)), (1, RGB(0.05, 0.05, 0.055))])
-        c.saveGState()
-        c.translateBy(x: cx, y: cy)
-        c.rotate(by: 135 * .pi / 180)
-        rrect(c, 60, -20, 190, 40, 8); fill(c, RGB(0.02, 0.02, 0.025))
-        circle(c, 150, 0, 9); fill(c, RGB(0.20, 0.22, 0.30))
-        circle(c, 150, 0, 4); fill(c, RGB(0.45, 0.50, 0.75))
-        c.restoreGState()
-
-        let d = display
-        rrect(c, d.minX - 6, d.minY - 6, d.width + 12, d.height + 12, 12); fill(c, RGB(0.80, 0.80, 0.81))
-        rrect(c, d.minX, d.minY, d.width, d.height, 7); fillV(c, d.minY, d.maxY, RGB(0.045, 0.025, 0.025), RGB(0.07, 0.035, 0.035))
-
-        text(c, "VOLUME", knobC.x, knobC.y + knobR + 26, 11, txtDim)
-        text(c, "MEMORY", 630, memY - 10, 11, txtDim, align: .left)
-        text(c, "SHUTTLE", shuttle.minX, memY - 10, 11, txtDim, align: .left)
-        text(c, "TEMPO", faderX, faderY0 - 30, 11, txtDim)
-        text(c, "+", faderX + 26, faderY0 + 4, 12, txtDim)
-        text(c, "−", faderX + 26, faderY1 + 4, 12, txtDim)
-    }
-
-    static func drawDynamic(_ c: CGContext, _ st: FaceState) {
-        let P = st.pressed, on = st.powerOn
-
-        for (id, t, x) in topBtns {
-            button(c, x, topY, topW, topH, P.contains(id), .small, t, 10, r: 5)
-            if id == "power" {
-                circle(c, x + 9, topY + 13, 2.6); fill(c, on ? ledOn : RGB(0.80, 0.80, 0.81))
-            }
+    static func fader(_ c: CGContext, _ value: CGFloat) {
+        let x = faderX, y0 = faderY0 + 4, y1 = faderY1 - 10
+        ln(c, x, y0, x, y1, line, 2)
+        for i in 0..<11 {
+            let y = y1 - CGFloat(i) * (y1 - y0) / 10
+            ln(c, x + 18, y, x + (i % 5 == 0 ? 30 : 24), y, i == 5 ? orange : txtDim)
         }
-        circle(c, 1146, 31, 3.0); fill(c, (st.mediaLED && on) ? RGB(0.30, 0.65, 1.0) : RGB(0.80, 0.80, 0.81))
-        text(c, "MEDIA", 1156, 35, 9, txtDim, align: .left)
-
-        if st.discLoaded {
-            disc(c, st)
-        } else {
-            c.saveGState()
-            c.translateBy(x: discC.x, y: discC.y)
-            c.rotate(by: st.discAngle)
-            spindle(c)
-            c.restoreGState()
-            text(c, "NO DISC", discC.x, discC.y + 70, 14, RGB(0.85, 0.85, 0.86))
-            text(c, "OPEN = Ordner · FILES = Dateien · oder hierher ziehen", discC.x, discC.y + 92, 11, txtDim)
-        }
-
-        drawDisplay(c, st)
-
-        for (lab, x, y) in keys {
-            let t = lab == "T" ? "TIME" : (lab == "C" ? "CLR" : lab)
-            button(c, x, y, keyW, keyH, P.contains("key_" + lab), .key, t, t.count == 1 ? 17 : 11)
-        }
-        button(c, enter.minX, enter.minY, enter.width, enter.height, P.contains("enter"), .key, "ENTER", 12)
-
-        knob(c, st.levelNorm)
-
-        for (i, m) in mem.enumerated() {
-            button(c, m.2, memY, memW, memH, P.contains(m.0), .key, m.1, 17, led: st.cueSet[i] && on)
-        }
-
-        let s = shuttle
-        rrect(c, s.minX, s.minY + 12, s.width, s.height - 24, 10); fill(c, RGB(0.30, 0.30, 0.32))
-        text(c, "REW", s.minX + 16, s.maxY + 14, 10, txtDim)
-        text(c, "FF", s.maxX - 12, s.maxY + 14, 10, txtDim)
-        let jx = s.midX + st.jog * jogTravel
-        rrect(c, jx - 22, s.minY + 4, 44, s.height - 4, 6); fill(c, RGB(0, 0, 0), 0.2)
-        rrect(c, jx - 22, s.minY, 44, s.height - 4, 6); fillV(c, s.minY, s.maxY, RGB(1, 1, 1), RGB(0.86, 0.86, 0.87))
-        c.addRect(CGRect(x: jx - 1.5, y: s.minY + 6, width: 3, height: s.height - 16)); fill(c, amber)
-
-        fader(c, st.varispeedNorm)
-
-        for (id, x, w) in transport {
-            let oy = button(c, x, trY, w, trH, P.contains(id), id == "play" ? .amber : .key)
-            icon(c, id, x + w / 2, trY + oy + trH / 2 - 2, id == "play" ? RGB(0.16, 0.10, 0.04) : RGB(0.18, 0.18, 0.20))
-        }
-
-        let leds: [String: Bool?] = ["keylock": st.keyLock, "repeat": st.repeatMode > 0, "shuffle": st.shuffle, "eject": nil]
-        for (id, t, x) in small {
-            let l: Bool? = (leds[id] ?? nil).map { $0 && on }
-            button(c, x, smallY, smallW, smallH, P.contains(id), .small, t, 10, led: l, r: 5)
-        }
-
-        if !on {
-            rrect(c, 0, 0, devW, devH, 18); fill(c, RGB(0, 0, 0), 0.12)
-        }
+        mono(c, "+", x - 26, y0 + 8, 11)
+        mono(c, "-", x - 26, y1 + 2, 11)
+        let cy = y1 - max(0, min(1, value)) * (y1 - y0)
+        c.addRect(CGRect(x: x - 16, y: cy - 9, width: 32, height: 18)); fill(c, RGB(0.16, 0.16, 0.17))
+        c.addRect(CGRect(x: x - 16, y: cy - 1, width: 32, height: 2)); fill(c, orange)
     }
 
     static func drawDisplay(_ c: CGContext, _ st: FaceState) {
@@ -475,7 +519,7 @@ enum Face {
         let on = st.powerOn
         func L(_ a: Bool) -> RGB { (a && on) ? segOn : segOff }
         let dw: CGFloat = 26, dh: CGFloat = 46, pitch: CGFloat = 34
-        var main = Array((on ? st.mainText : "") + String(repeating: " ", count: 12)).prefix(12).map { $0 }
+        var main: [Character] = Array(((on ? st.mainText : "") + String(repeating: " ", count: 12)).prefix(12))
         if !on { main = Array(repeating: " ", count: 12) }
         func part(_ a: Int, _ b: Int) -> String { String(main[a..<b]) }
         if on && st.msgMode {
@@ -491,13 +535,14 @@ enum Face {
                 circle(c, x + 362 + (46 - dy) * 0.08, y + 38 + dy, 3); fill(c, L(true))
             }
             digits(c, part(10, 12), x + 372, y + 38, dw, dh, pitch)
+            if on { titleLine(c, st, x, y, w, L(true)) }
         }
         let ind: [(String, Bool)] = [(st.repeatMode == 2 ? "REPEAT 1" : "REPEAT", st.repeatMode > 0), ("SHUFFLE", st.shuffle),
                                      ("KEY LOCK", st.keyLock), ("PAUSE", st.paused), ("REMAIN", st.remain)]
         for (i, item) in ind.enumerated() {
             text(c, item.0, x + w - 14, y + 26 + CGFloat(i) * 15, 10, L(item.1), align: .right)
         }
-        let by = y + 118
+        let by = y + 126
         text(c, "TEMPO", x + 18, by - 6, 10, L(true), align: .left)
         digits(c, on ? st.vsText : "   ", x + 18, by, 15, 26, 20)
         text(c, "%", x + 84, by + 25, 12, L(true), align: .left)
@@ -513,8 +558,39 @@ enum Face {
                 c.addRect(CGRect(x: mx + 14 + CGFloat(i) * 10.5, y: yy, width: 8, height: 10))
                 let hot = i >= n - 5
                 let isOn = i < lit || (pk > 0 && i == pk - 1)
-                fill(c, isOn ? (hot ? RGB(1.0, 0.62, 0.14) : segOn) : (hot ? RGB(0.20, 0.11, 0.03) : segOff))
+                let col: RGB = isOn ? (hot ? RGB(1.0, 0.62, 0.14) : segOn) : (hot ? RGB(0.20, 0.11, 0.03) : segOff)
+                fill(c, col)
             }
         }
+    }
+
+    /// Titel (Laufschrift bei langen Namen) und Auflösung, innerhalb des Displays.
+    static func titleLine(_ c: CGContext, _ st: FaceState, _ x: CGFloat, _ y: CGFloat, _ w: CGFloat, _ col: RGB) {
+        let ty = y + 101
+        let font = NSFont.systemFont(ofSize: 11, weight: .semibold)
+        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: NSColor(cgColor: col.cg()) ?? .red]
+        let res = NSAttributedString(string: st.resolution, attributes: attrs)
+        let rw = st.resolution.isEmpty ? 0 : res.size().width
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(cgContext: c, flipped: true)
+        if !st.resolution.isEmpty { res.draw(at: NSPoint(x: x + w - 14 - rw, y: ty - font.ascender)) }
+        if !st.title.isEmpty {
+            let title = NSAttributedString(string: st.title, attributes: attrs)
+            let boxX = x + 18, boxW = w - 32 - rw - (st.resolution.isEmpty ? 0 : 16)
+            let tw = title.size().width
+            c.saveGState()
+            c.clip(to: CGRect(x: boxX, y: ty - 13, width: boxW, height: 17))
+            if tw <= boxW {
+                title.draw(at: NSPoint(x: boxX, y: ty - font.ascender))
+            } else {
+                let gap: CGFloat = 50
+                let off = CGFloat(ProcessInfo.processInfo.systemUptime * 28).truncatingRemainder(dividingBy: tw + gap)
+                for k in 0..<2 {
+                    title.draw(at: NSPoint(x: boxX - off + CGFloat(k) * (tw + gap), y: ty - font.ascender))
+                }
+            }
+            c.restoreGState()
+        }
+        NSGraphicsContext.restoreGraphicsState()
     }
 }

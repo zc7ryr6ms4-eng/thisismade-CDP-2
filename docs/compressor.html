@@ -66,6 +66,7 @@
   const ua = navigator.userAgent || "";
   const mine = /Windows/i.test(ua) ? "win" : /Mac OS X|Macintosh/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "lin" : "";
   const grid = document.getElementById("osGrid");
+  if (systems.length === 1) grid.classList.add("one");
   grid.innerHTML = systems.map(s => `
     <article class="os${s.id === mine ? " mine" : ""}" id="os-${s.id}">
       <h3>${icons[s.id]}${s.name}</h3>
@@ -80,14 +81,14 @@
       <p class="hint">${s.hint}</p>
     </article>`).join("");
   const heroAuto = "";
-  if (mine && heroAuto) {
-    const s = systems.find(x => x.id === mine);
+  const s = systems.length === 1 ? systems[0] : systems.find(x => x.id === mine);
+  if (s && heroAuto) {
     const btn = document.getElementById("heroBtn");
     btn.href = s.files[0][0];
     btn.target = "_blank";
     btn.rel = "noopener";
     btn.textContent = heroAuto + " " + s.name;
-    document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + ' · <a href="#download">andere Systeme</a>';
+    document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
   }
   grid.addEventListener("click", async e => {
     const b = e.target.closest(".copy");

@@ -102,7 +102,7 @@ def downloads(intro, more, banner=""):
     <h2><span class="br">[</span>Download</h2>
     {banner}<p class="hint">{intro}</p>
     <div class="grid" id="osGrid"></div>
-    <p class="more">{more}</p>
+    {f"<p class=\"more\">{more}</p>" if more else ""}
   </div>
 </section>
 """
@@ -227,7 +227,7 @@ page = (head("thisismade cdp-2") + nav("index.html", "thisismade-CDP-2")
                     "Alles wird bedient wie am echten Deck: Titelnummer tippen und ENTER, Cue-Punkte auf A, B und C, "
                     "Tempo am Fader."])
         + downloads("Das .deb-Paket kommt direkt aus dem GitHub-Release von thisismade cdp-2.",
-                    'Ältere Version mit Windows- und Mac-Fassung: <a href="cdp-1.html">thisismade CDP-1</a>.')
+                    'Ältere Version: <a href="cdp-1.html">thisismade CDP-1</a>.')
         + features("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: MP3, FLAC, WAV, AIFF, AAC/M4A, "
                    "ALAC und mehr.", cdp_feats)
         + footer("thisismade cdp-2", "thisismade-CDP-2")
@@ -238,34 +238,25 @@ open("index.html", "w").write(page)
 R1 = GH + "thisismade-CDP-1/releases/latest/download/"
 RAW1 = "https://raw.githubusercontent.com/zc7ryr6ms4-eng/thisismade-CDP-1/main/"
 cdp1_sys = [
-    {"id": "win", "name": "Windows 11", "req": "auch Windows 10 · 64 Bit · .NET ist enthalten",
-     "files": [[R1 + "ThisismadeCDPlayer-Setup-1.0.0.exe", "Setup", "68 MB"],
-               [R1 + "ThisismadeCDPlayer-portable-win-x64.zip", "Portable, ohne Installation", "68 MB"]],
-     "hint": "Installiert „Thisismade CD Player“ im Startmenü."},
-    {"id": "mac", "name": "macOS", "req": "ab macOS 13 Ventura · Apple Silicon und Intel",
-     "files": [[R1 + "ThisismadeCDPlayer-1.0.0.pkg", "Installationspaket", "0,6 MB"],
-               [R1 + "ThisismadeCDPlayer.dmg", "Disk-Image", "0,9 MB"]],
-     "hint": "Legt „Thisismade CD Player“ in Programme."},
     {"id": "lin", "name": "Ubuntu", "req": "ab Ubuntu 24.04 · GNOME",
-     "files": [[R1 + "thisismade-cd-player_1.0.0_all.deb", "Debian-Paket", "27 KB"],
-               [R1 + "thisismade-cd-player_1.0.0_amd64.snap", "Snap, nur Wayland", "122 MB"]],
+     "files": [[R1 + "thisismade-cd-player_1.0.0_all.deb", "Debian-Paket", "27 KB"]],
      "cmd": "wget -qO- " + RAW1 + "install.sh | bash",
-     "hint": "Oder im Terminal installieren."},
+     "hint": "Doppelt anklicken öffnet das App-Zentrum. Oder im Terminal installieren."},
 ]
 banner = ('<p class="banner">Das ist die erste Version. Die aktuelle Version mit neuem Design, Titelanzeige und '
           'Auflösung ist <a href="index.html">thisismade cdp-2</a>.</p>')
 page = (head("thisismade CDP-1") + nav("cdp-1.html", "thisismade-CDP-1")
         + hero_text("CDP-1", "die erste Version",
                     "Der „Thisismade CD Player“: die erste Fassung der CD-Player-Software mit weißer Front, roten "
-                    "Anzeigen und allen Funktionen eines CD-Decks. Für Windows&nbsp;11, macOS und Ubuntu.",
-                    "Version 1 herunterladen", "Version 1.0.0 · Archiv · BSD-Lizenz")
+                    "Anzeigen und allen Funktionen eines CD-Decks. Für Ubuntu Linux.",
+                    "Version 1 herunterladen", "Version 1.0.0 · .deb · Archiv · BSD-Lizenz")
         + showcase("cdp1.jpg", 1200, 692,
                    "Die Gerätefront von Thisismade CDP-1: weiße Front mit Disc, rotem Display und Bedienfeld",
                    "Wo alles anfing",
                    ["Weiße Front, silberne Disc mit Cover-Druck, rote Sieben-Segment-Anzeige und Pegel L/R.",
                     "Gleiche Bedienung wie heute: Ziffernblock mit ENTER, Memory A, B und C, Shuttle, Tempo-Fader "
                     "mit Key Lock."])
-        + downloads("Alle Dateien kommen aus dem GitHub-Release von thisismade CDP-1.", UNSIGNED, banner)
+        + downloads("Das .deb-Paket kommt aus dem GitHub-Release von thisismade CDP-1.", "", banner)
         + features("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs.", cdp_feats)
         + footer("thisismade CDP-1", "thisismade-CDP-1")
         + script(cdp1_sys, "Version 1 für", "Version 1.0.0"))

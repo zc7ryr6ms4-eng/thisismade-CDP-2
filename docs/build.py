@@ -156,11 +156,15 @@ SCRIPT = """
   const s = systems.length === 1 ? systems[0] : systems.find(x => x.id === mine);
   if (s && heroAuto) {
     const btn = document.getElementById("heroBtn");
-    btn.href = s.files[0][0];
-    btn.target = "_blank";
-    btn.rel = "noopener";
     btn.textContent = heroAuto + " " + s.name;
-    document.getElementById("heroNote").innerHTML = %VERSION% + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    if (s.id === mine) {
+      btn.href = s.files[0][0];
+      btn.target = "_blank";
+      btn.rel = "noopener";
+      document.getElementById("heroNote").innerHTML = %VERSION% + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    } else {
+      document.getElementById("heroNote").innerHTML = %VERSION% + " · nur für " + s.name + " Linux";
+    }
   }
   grid.addEventListener("click", async e => {
     const b = e.target.closest(".copy");
@@ -192,10 +196,6 @@ def script(systems, hero_auto, version):
             .replace("%VERSION%", json.dumps(version)))
 
 
-UNSIGNED = ("Die Installer sind nicht kostenpflichtig signiert. Windows zeigt beim ersten Start „Der Computer wurde "
-            "durch Windows geschützt“ → <em>Weitere Informationen → Trotzdem ausführen</em>; auf dem Mac in den "
-            "Systemeinstellungen unter Datenschutz &amp; Sicherheit auf „Dennoch öffnen“ klicken.")
-
 # ------------------------------------------------------------------ cdp-2
 R2 = GH + "thisismade-CDP-2/releases/latest/download/"
 RAW2 = "https://raw.githubusercontent.com/zc7ryr6ms4-eng/thisismade-CDP-2/main/"
@@ -205,13 +205,15 @@ cdp2_sys = [
      "cmd": "wget -qO- " + RAW2 + "install.sh | bash",
      "hint": "Doppelt anklicken öffnet das App-Zentrum. Oder im Terminal: installiert den Player samt allem, was er braucht."},
 ]
+FORMATS = ("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: alles, was GStreamer abspielt, "
+           "z.&nbsp;B. MP3, FLAC, OGG, Opus, WAV, AIFF, M4A/AAC, WMA, APE und WavPack.")
 cdp_feats = [
     ("Drehende Disc", "Klick spielt oder pausiert, Drehen mit der Maus scratcht durch den Titel."),
     ("Tempo und Key Lock", "50 bis 150 Prozent. Mit Key Lock bleibt die Tonhöhe, ohne ändert sie sich mit."),
     ("Memory A · B · C", "Drei Cue-Punkte pro Titel, gespeichert. Gedrückt halten setzt neu."),
     ("Shuttle", "Vor- und Rücklauf bis 16-fach, je weiter der Schieber, desto schneller."),
     ("Rotes Display", "Titel als Laufschrift, Zeit, Restzeit, Auflösung, Tempo, Lautstärke und Pegel L/R."),
-    ("Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von GNOME."),
+    ("Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von GNOME, kein Ruhezustand während der Wiedergabe."),
 ]
 page = (head("thisismade cdp-2") + nav("index.html", "thisismade-CDP-2")
         + hero_text("cdp-2", "CD-Player-Software",
@@ -228,8 +230,7 @@ page = (head("thisismade cdp-2") + nav("index.html", "thisismade-CDP-2")
                     "Tempo am Fader."])
         + downloads("Das .deb-Paket kommt direkt aus dem GitHub-Release von thisismade cdp-2.",
                     'Ältere Version: <a href="cdp-1.html">thisismade CDP-1</a>.')
-        + features("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: MP3, FLAC, WAV, AIFF, AAC/M4A, "
-                   "ALAC und mehr.", cdp_feats)
+        + features(FORMATS, cdp_feats)
         + footer("thisismade cdp-2", "thisismade-CDP-2")
         + script(cdp2_sys, "Herunterladen für", "Version 1.0.0"))
 open("index.html", "w").write(page)
@@ -243,6 +244,9 @@ cdp1_sys = [
      "cmd": "wget -qO- " + RAW1 + "install.sh | bash",
      "hint": "Doppelt anklicken öffnet das App-Zentrum. Oder im Terminal installieren."},
 ]
+cdp1_feats = [f if f[0] != "Rotes Display" else
+              ("Rotes Display", "Titelnummer, Anzahl der Titel, Zeit, Restzeit, Tempo, Lautstärke und Pegel L/R.")
+              for f in cdp_feats]
 banner = ('<p class="banner">Das ist die erste Version. Die aktuelle Version mit neuem Design, Titelanzeige und '
           'Auflösung ist <a href="index.html">thisismade cdp-2</a>.</p>')
 page = (head("thisismade CDP-1") + nav("cdp-1.html", "thisismade-CDP-1")
@@ -257,7 +261,7 @@ page = (head("thisismade CDP-1") + nav("cdp-1.html", "thisismade-CDP-1")
                     "Gleiche Bedienung wie heute: Ziffernblock mit ENTER, Memory A, B und C, Shuttle, Tempo-Fader "
                     "mit Key Lock."])
         + downloads("Das .deb-Paket kommt aus dem GitHub-Release von thisismade CDP-1.", "", banner)
-        + features("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs.", cdp_feats)
+        + features(FORMATS, cdp1_feats)
         + footer("thisismade CDP-1", "thisismade-CDP-1")
         + script(cdp1_sys, "Version 1 für", "Version 1.0.0"))
 open("cdp-1.html", "w").write(page)

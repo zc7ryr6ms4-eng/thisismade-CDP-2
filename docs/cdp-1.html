@@ -49,8 +49,8 @@
 <section class="band feat" id="funktionen">
   <div class="wrap">
     <h2><span class="br">[</span>Funktionen</h2>
-    <p>Spielt Ordner, Einzeldateien, Playlists und Audio-CDs.</p>
-    <div class="flist"><div><h4>Drehende Disc</h4><p>Klick spielt oder pausiert, Drehen mit der Maus scratcht durch den Titel.</p></div><div><h4>Tempo und Key Lock</h4><p>50 bis 150 Prozent. Mit Key Lock bleibt die Tonhöhe, ohne ändert sie sich mit.</p></div><div><h4>Memory A · B · C</h4><p>Drei Cue-Punkte pro Titel, gespeichert. Gedrückt halten setzt neu.</p></div><div><h4>Shuttle</h4><p>Vor- und Rücklauf bis 16-fach, je weiter der Schieber, desto schneller.</p></div><div><h4>Rotes Display</h4><p>Titel als Laufschrift, Zeit, Restzeit, Auflösung, Tempo, Lautstärke und Pegel L/R.</p></div><div><h4>Mediensteuerung</h4><p>Medientasten, Sperrbildschirm und die Mediensteuerung von GNOME.</p></div></div>
+    <p>Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: alles, was GStreamer abspielt, z.&nbsp;B. MP3, FLAC, OGG, Opus, WAV, AIFF, M4A/AAC, WMA, APE und WavPack.</p>
+    <div class="flist"><div><h4>Drehende Disc</h4><p>Klick spielt oder pausiert, Drehen mit der Maus scratcht durch den Titel.</p></div><div><h4>Tempo und Key Lock</h4><p>50 bis 150 Prozent. Mit Key Lock bleibt die Tonhöhe, ohne ändert sie sich mit.</p></div><div><h4>Memory A · B · C</h4><p>Drei Cue-Punkte pro Titel, gespeichert. Gedrückt halten setzt neu.</p></div><div><h4>Shuttle</h4><p>Vor- und Rücklauf bis 16-fach, je weiter der Schieber, desto schneller.</p></div><div><h4>Rotes Display</h4><p>Titelnummer, Anzahl der Titel, Zeit, Restzeit, Tempo, Lautstärke und Pegel L/R.</p></div><div><h4>Mediensteuerung</h4><p>Medientasten, Sperrbildschirm und die Mediensteuerung von GNOME, kein Ruhezustand während der Wiedergabe.</p></div></div>
   </div>
 </section>
 
@@ -84,11 +84,15 @@
   const s = systems.length === 1 ? systems[0] : systems.find(x => x.id === mine);
   if (s && heroAuto) {
     const btn = document.getElementById("heroBtn");
-    btn.href = s.files[0][0];
-    btn.target = "_blank";
-    btn.rel = "noopener";
     btn.textContent = heroAuto + " " + s.name;
-    document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    if (s.id === mine) {
+      btn.href = s.files[0][0];
+      btn.target = "_blank";
+      btn.rel = "noopener";
+      document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    } else {
+      document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · nur für " + s.name + " Linux";
+    }
   }
   grid.addEventListener("click", async e => {
     const b = e.target.closest(".copy");

@@ -84,11 +84,15 @@
   const s = systems.length === 1 ? systems[0] : systems.find(x => x.id === mine);
   if (s && heroAuto) {
     const btn = document.getElementById("heroBtn");
-    btn.href = s.files[0][0];
-    btn.target = "_blank";
-    btn.rel = "noopener";
     btn.textContent = heroAuto + " " + s.name;
-    document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    if (s.id === mine) {
+      btn.href = s.files[0][0];
+      btn.target = "_blank";
+      btn.rel = "noopener";
+      document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
+    } else {
+      document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · nur für " + s.name + " Linux";
+    }
   }
   grid.addEventListener("click", async e => {
     const b = e.target.closest(".copy");

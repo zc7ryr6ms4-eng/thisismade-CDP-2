@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>thisismade Compressor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="hero" id="top">
+  <nav aria-label="Hauptnavigation">
+    <a class="mark" href="index.html">[thisismade<b>.de</b></a>
+    <ul><li><a href="index.html">cdp-2</a></li><li class="keep"><a href="compressor.html" aria-current="page">Compressor</a></li><li><a href="cdp-1.html">CDP-1</a></li><li><a href="#download">Download</a></li><li><a href="https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3" target="_blank" rel="noopener">GitHub</a></li></ul>
+  </nav>
+  <div class="hero-text">
+    <div>
+      <h1>Compressor <span>Diode-Bridge-Limiter</span></h1>
+      <p class="lead">Stereo-Kompressor und Limiter mit Diodenbrücke als VST3, AU und Standalone, nach dem Vorbild des 33609. Alle Regler der Frontplatte, gerastet wie beim Original, dazu Auto Gain.</p>
+    </div>
+    <div class="cta">
+      <a class="btn main" id="heroBtn" href="#download">Herunterladen</a>
+      <span class="note" id="heroNote">Version 1.0.0 · VST3 · AU · Standalone</span>
+    </div>
+  </div>
+</header>
+
+<section class="band player" id="player">
+  <div class="wrap">
+    <img class="shot" src="compressor.jpg" width="1200" height="416" alt="Bedienoberfläche des thisismade Compressor mit zwei Kanälen, Drehreglern und zwei Zeigerinstrumenten">
+    <div>
+      <h2><span class="br">[</span>Zwei Kanäle, ein Klang</h2>
+      <p>Rückgekoppelter Kompressor mit weichem Knie, Limiter und zwei Übertragern, alles mit zweifachem Oversampling. Auch mit ausgeschalteten Sektionen färbt das Plugin den Klang wie die Hardware; BYPASS nimmt alles heraus.</p><p>a1 und a2 regeln automatisch: kurze Spitzen erholen sich schnell, länger anhaltendes Material langsam.</p><div class="chain"><span>Eingangsübertrager</span><i>→</i><span>Diodenbrücken-Kompressor</span><i>→</i><span>Make-up Gain</span><i>→</i><span>Limiter</span><i>→</i><span>Ausgangsübertrager</span><i>→</i><span>Auto Gain</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="band dl" id="download">
+  <div class="wrap">
+    <h2><span class="br">[</span>Download</h2>
+    <p class="hint">Die fertigen Plugins baut GitHub bei jeder Änderung. Sie liegen als Artefakte am jeweiligen Build und lassen sich mit einem GitHub-Konto laden.</p>
+    <div class="grid" id="osGrid"></div>
+    <p class="more">Unabhängige Nachbildung, nicht mit AMS Neve verbunden. „33609“ beschreibt nur die Hardware, die als Vorbild dient.</p>
+  </div>
+</section>
+
+<section class="band feat" id="funktionen">
+  <div class="wrap">
+    <h2><span class="br">[</span>Funktionen</h2>
+    <p>Pro Kanal A und B dieselben Regler wie an der Hardware, gerastet in deren Schritten.</p>
+    <div class="flist"><div><h4>Limiter</h4><p>LIMIT IN, Threshold +4 bis +15 dBu, Recovery 50 ms bis a2, Attack fast oder slow.</p></div><div><h4>Kompressor</h4><p>Threshold −20 bis +10 dBu, Ratio 1,5:1 bis 6:1, Recovery bis a2, Gain 0 bis 20 dB.</p></div><div><h4>Gerastert wie das Original</h4><p>Jeder Regler rastet in den Schritten der Hardware ein, pro Kanal A und B.</p></div><div><h4>Auto Gain</h4><p>Gleicht die Ausgangslautheit über etwa 3 s an den Eingang an, für faire A/B-Vergleiche.</p></div><div><h4>Stereo Link</h4><p>Koppelt beide Sidechains; Kanal A steuert dann beide Kanäle.</p></div><div><h4>Zeigerinstrumente</h4><p>Gain-Reduction-Meter je Kanal mit Nadelträgheit und LIMIT-LED.</p></div></div><div class="tbl"><table><thead><tr><th>Messung</th><th class="num">Hardware-Angabe</th><th class="num">thisismade</th></tr></thead><tbody><tr><td>Limiter, Sprung 10 → 20 dBu</td><td class="num">< 0,1 dB Änderung</td><td class="num">0,10 dB</td></tr><tr><td>Attack Kompressor (fast)</td><td class="num">3 ms</td><td class="num">2,8 ms bis 90 %</td></tr><tr><td>THD, Sektionen aus, +9 dBu</td><td class="num">< 0,075 %</td><td class="num">0,034 %</td></tr><tr><td>THD, 6:1, +20 dB Gain, Thr −18</td><td class="num">< 0,2 %</td><td class="num">0,11 %</td></tr><tr><td>THD, Limiter, hoher Pegel</td><td class="num">< 0,45 %</td><td class="num">0,11 %</td></tr><tr><td>Ratio, 10 dB über Threshold</td><td class="num">1,5 / 2 / 3 / 4 / 6</td><td class="num">1,50 / 2,00 / 3,03 / 4,01 / 6,03</td></tr></tbody></table></div><p class="hint" style="margin-top:12px">Gemessen mit <code>tests/dsp_test.cpp</code> gegen die veröffentlichten Daten der Hardware.</p>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 thisismade · thisismade Compressor · BSD-3-Clause</span>
+  <span><a href="https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3" target="_blank" rel="noopener">Quellcode auf GitHub</a> · <a href="https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/issues" target="_blank" rel="noopener">Fehler melden</a></span>
+</footer>
+
+<script>
+{
+  const icons = {"win": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M3 5.5 10.5 4.4v7H3zM11.5 4.3 21 3v8.4h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z\"/></svg>", "mac": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path fill=\"currentColor\" d=\"M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.9C7 7.2 5.5 8.1 4.7 9.6c-1.7 2.9-.4 7.1 1.2 9.4.8 1.1 1.7 2.4 2.9 2.4s1.6-.8 3-.8 1.8.8 3 .8 2-1.1 2.8-2.3c.9-1.3 1.2-2.5 1.2-2.6 0 0-2.4-.9-2.4-3.9zM14.1 5.5c.6-.8 1.1-1.8 1-2.9-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2-.5 2.7-1.3z\"/></svg>", "lin": "<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"12\" cy=\"12\" r=\"3\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\"/><circle cx=\"19.5\" cy=\"9\" r=\"1.8\" fill=\"currentColor\"/><circle cx=\"6.5\" cy=\"17\" r=\"1.8\" fill=\"currentColor\"/><circle cx=\"8\" cy=\"5.6\" r=\"1.8\" fill=\"currentColor\"/></svg>"};
+  const systems = [{"id": "win", "name": "Windows", "req": "VST3 · 64 Bit", "files": [["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/actions/workflows/build.yml", "Build-Artefakt „thisismade-Windows“", "VST3"], ["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3", "Quellcode", "CMake"]], "steps": ["Den neuesten erfolgreichen Build öffnen.", "Unter <em>Artifacts</em> „thisismade-Windows“ laden (GitHub-Anmeldung nötig).", "<code>thisismade.vst3</code> nach <code>C:\\Program Files\\Common Files\\VST3\\</code> kopieren."], "hint": "Danach in der DAW nach neuen Plugins suchen lassen."}, {"id": "mac", "name": "macOS", "req": "VST3 und AU · Apple Silicon und Intel", "files": [["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/actions/workflows/build.yml", "Installer „thisismade-macOS-Installer“", ".pkg"], ["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/actions/workflows/build.yml", "Build-Artefakt „thisismade-macOS“", "VST3 · AU"]], "steps": ["Den neuesten erfolgreichen Build öffnen.", "Unter <em>Artifacts</em> „thisismade-macOS-Installer“ laden und die .pkg öffnen.", "Der Installer legt VST3 und AU in <code>/Library/Audio/Plug-Ins</code>."], "hint": "Nicht signiert: Systemeinstellungen → Datenschutz &amp; Sicherheit → „Dennoch öffnen“."}, {"id": "lin", "name": "Linux", "req": "VST3 und Standalone · z. B. Ubuntu mit REAPER", "files": [["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/actions/workflows/build.yml", "Build-Artefakt „thisismade-Linux“", "VST3"], ["https://github.com/zc7ryr6ms4-eng/thisismade-compressor-VST3/archive/refs/heads/main.zip", "Quellcode als .zip", "zum Selberbauen"]], "cmd": "./build-linux.sh", "hint": "Im entpackten Quellcode ausführen: baut VST3 und Standalone, testet und kopiert nach <code>~/.vst3</code>."}];
+  const ua = navigator.userAgent || "";
+  const mine = /Windows/i.test(ua) ? "win" : /Mac OS X|Macintosh/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "lin" : "";
+  const grid = document.getElementById("osGrid");
+  grid.innerHTML = systems.map(s => `
+    <article class="os${s.id === mine ? " mine" : ""}" id="os-${s.id}">
+      <h3>${icons[s.id]}${s.name}</h3>
+      <p class="req">${s.req}</p>
+      <span class="tag">Für dein System</span>
+      <ul class="files">${s.files.map((f, i) => `
+        <li><a class="${i === 0 ? "first" : ""}" href="${f[0]}" target="_blank" rel="noopener">
+          <span>${f[1]}</span><small>${f[2]}</small></a></li>`).join("")}
+      </ul>
+      ${s.cmd ? `<div class="cmd"><code>${s.cmd}</code><button class="copy" type="button" data-cmd="${s.cmd}">Kopieren</button></div>` : ""}
+      ${s.steps ? `<ol class="steps">${s.steps.map(x => `<li>${x}</li>`).join("")}</ol>` : ""}
+      <p class="hint">${s.hint}</p>
+    </article>`).join("");
+  const heroAuto = "";
+  if (mine && heroAuto) {
+    const s = systems.find(x => x.id === mine);
+    const btn = document.getElementById("heroBtn");
+    btn.href = s.files[0][0];
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    btn.textContent = heroAuto + " " + s.name;
+    document.getElementById("heroNote").innerHTML = "Version 1.0.0" + " · " + s.files[0][2] + ' · <a href="#download">andere Systeme</a>';
+  }
+  grid.addEventListener("click", async e => {
+    const b = e.target.closest(".copy");
+    if (!b) return;
+    try {
+      await navigator.clipboard.writeText(b.dataset.cmd);
+      b.textContent = "Kopiert";
+    } catch (err) {
+      const r = document.createRange();
+      r.selectNodeContents(b.previousElementSibling);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      b.textContent = "Markiert";
+    }
+    setTimeout(() => { b.textContent = "Kopieren"; }, 1800);
+  });
+}
+</script>
+</body>
+</html>

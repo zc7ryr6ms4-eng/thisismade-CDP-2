@@ -72,6 +72,8 @@ jobs:
     name: Snap
     needs: test
     runs-on: ubuntu-24.04
+    env:
+      SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
     steps:
       - uses: actions/checkout@v4
       - uses: snapcore/action-build@v1
@@ -86,6 +88,16 @@ jobs:
         with:
           name: snap
           path: ${{ steps.build.outputs.snap }}
+      # Snap Store: nur wenn der Zugangsschlüssel als Secret SNAPCRAFT_STORE_CREDENTIALS hinterlegt ist.
+      # Release veröffentlicht → Kanal "stable", Push auf main → Kanal "edge" (zum Testen).
+      - name: Im Snap Store veröffentlichen
+        if: env.SNAPCRAFT_STORE_CREDENTIALS != '' && github.event_name != 'pull_request'
+        uses: snapcore/action-publish@v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ steps.build.outputs.snap }}
+          release: ${{ (github.event_name == 'release' || inputs.release_tag != '') && 'stable' || 'edge' }}
 
   macos:
     name: macOS-App (Universal, .dmg)

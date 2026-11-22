@@ -78,6 +78,10 @@ bash build-deb.sh                  # .deb nach dist/ bauen
 Jeder Push wird auf GitHub Actions mit echtem GTK4 und GStreamer getestet
 (Abspielen, Tempo, Cue, Screenshot); ein Tag `v*` baut .deb und Snap und veröffentlicht ein Release.
 
+## Snap Store
+
+Das Snap wird automatisch im Ubuntu Snap Store veröffentlicht, sobald der Zugang eingerichtet ist – siehe [SNAP-STORE.md](SNAP-STORE.md).
+
 ## Ältere Version
 
 Version 1 („Thisismade CD Player“) mit Linux-, macOS- und Windows-11-Fassung liegt als Archiv unter

@@ -15,6 +15,10 @@ description: |
   Plays folders, files, playlists and audio CDs and integrates with the GNOME
   media controls (MPRIS). This snap runs on Wayland only (no X11).
 license: BSD-3-Clause
+website: https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2
+source-code: https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2
+issues: https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2/issues
+contact: https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2/issues
 icon: data/io.github.thisismade.cdp2.svg
 grade: stable
 confinement: strict

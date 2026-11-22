@@ -1,4 +1,4 @@
-// Gerätefront des thisismade cdp-2 – GDI+-Zeichnung und Klickflächen.
+// Gerätefront des thisismade cdp-2 – Minimal-Design (Weiß, Orange, rotes Display), GDI+.
 // Koordinaten: Geräteeinheiten (1200 x 660), y nach unten.
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -29,6 +29,8 @@ public sealed class FaceState
     public float Jog;
     public int RepeatMode;
     public bool Shuffle, Paused, Remain;
+    public string Title = "";
+    public string Resolution = "";
 }
 
 public static class Face
@@ -248,27 +250,68 @@ public static class Face
         for (int i = 0; i < text.Length; i++) Digit(g, x + i * pitch, y, w, h, text[i]);
     }
 
-    // ------------------------------------------------------------- Bauteile
-    enum Style { Key, Small, AmberKey }
+    // ------------------------------------------------------------- Minimal-Design
+    static readonly Color Body = C(0.955, 0.955, 0.95);
+    static readonly Color Line_ = C(0.74, 0.74, 0.75);
+    static readonly Color Dot = C(0.80, 0.80, 0.81);
+    static readonly Color Ink = C(0.12, 0.12, 0.13);
+    static readonly Color Key = C(0.985, 0.985, 0.98);
+    static readonly Color KeyHi = C(0.90, 0.90, 0.90);
+    static readonly Color Orange = C(1.0, 0.40, 0.0);
+    static readonly Color OrangeDim = C(0.86, 0.80, 0.75);
 
-    static float Button(Graphics g, float x, float y, float w, float h, bool pressed, Style style = Style.Key,
-                        string label = null, float size = 13, bool? led = null, float r = 7)
+    static readonly Dictionary<float, Font> MonoFonts = new();
+
+    static Font Mono(float size)
     {
-        (Color top, Color bot, Color side, Color fg) = style switch
+        if (!MonoFonts.TryGetValue(size, out var f))
         {
-            Style.Key => (C(0.99, 0.99, 0.99), C(0.90, 0.90, 0.91), C(0.70, 0.70, 0.72), C(0.18, 0.18, 0.20)),
-            Style.Small => (C(0.95, 0.95, 0.96), C(0.87, 0.87, 0.88), C(0.68, 0.68, 0.70), C(0.30, 0.30, 0.32)),
-            _ => (C(1.0, 0.66, 0.24), C(0.95, 0.52, 0.08), C(0.55, 0.28, 0.03), C(0.16, 0.10, 0.04)),
-        };
-        float oy = pressed ? 2 : 0;
-        Fill(g, RRect(x, y + 3, w, h, r), C(0, 0, 0, 0.16));
-        Fill(g, RRect(x, y + oy, w, h - oy + 1, r), side);
-        FillV(g, RRect(x, y + oy, w, h - 3, r), y, y + h, top, bot);
-        Rect(g, x + r, y + oy + 0.6f, w - 2 * r, 1, C(1, 1, 1, 0.6));
-        if (label != null) Text(g, label, x + w / 2, y + oy + (h - 3) / 2 + size * 0.36f, size, fg);
-        if (led.HasValue) Fill(g, Circle(x + w - 10, y + oy + 10, 3.2f), led.Value ? LedOn : LedOff);
-        return oy;
+            string fam = "Cascadia Mono";
+            try { using var t = new FontFamily(fam); } catch { fam = "Consolas"; }
+            f = new Font(fam, size, FontStyle.Regular, GraphicsUnit.Pixel);
+            MonoFonts[size] = f;
+        }
+        return f;
     }
+
+    static void MonoText(Graphics g, string s, float x, float baseline, float size, Color col, Align a = Align.Left)
+    {
+        var f = Mono(size);
+        float ascent = size * f.FontFamily.GetCellAscent(f.Style) / f.FontFamily.GetEmHeight(f.Style);
+        float w = g.MeasureString(s, f, PointF.Empty, Typo).Width;
+        if (a == Align.Center) x -= w / 2;
+        else if (a == Align.Right) x -= w;
+        using var b = new SolidBrush(col);
+        g.DrawString(s, f, b, x, baseline - ascent, Typo);
+    }
+
+    static void Stroke(Graphics g, GraphicsPath p, Color c, float w = 1f)
+    {
+        using var pen = new Pen(c, w);
+        g.DrawPath(pen, p);
+        p.Dispose();
+    }
+
+    static void FillStroke(Graphics g, GraphicsPath p, Color fill, Color edge, float w = 1f)
+    {
+        using (var b = new SolidBrush(fill)) g.FillPath(b, p);
+        using (var pen = new Pen(edge, w)) g.DrawPath(pen, p);
+        p.Dispose();
+    }
+
+    static void Ln(Graphics g, float x0, float y0, float x1, float y1, Color c, float w = 1f)
+    {
+        using var pen = new Pen(c, w);
+        g.DrawLine(pen, x0, y0, x1, y1);
+    }
+
+    static void Led(Graphics g, float x, float y, bool on) => Rect(g, x - 3, y - 3, 6, 6, on ? Orange : OrangeDim);
+
+    static void RoundKey(Graphics g, float cx, float cy, float r, bool pressed, Color fill)
+        => FillStroke(g, Circle(cx, cy, r), pressed ? Orange : fill, pressed ? Orange : Line_);
+
+    static void SquareKey(Graphics g, float x, float y, float w, float h, bool pressed, Color fill, float r = 6)
+        => FillStroke(g, RRect(x, y, w, h, r), pressed ? Orange : fill, pressed ? Orange : Line_);
 
     static void Tri(Graphics g, Brush b, params PointF[] pts) => g.FillPolygon(b, pts);
 
@@ -296,107 +339,6 @@ public static class Face
         }
     }
 
-    static void Knob(Graphics g, float value)
-    {
-        float cx = KnobC.X, cy = KnobC.Y;
-        using (var tick = new SolidBrush(TxtDim))
-        {
-            for (int i = 0; i < 21; i++)
-            {
-                double a = (225 - 13.5 * i) * Math.PI / 180, a2 = a + 0.015;
-                float r0 = KnobR + 7, r1 = KnobR + (i % 5 == 0 ? 13 : 10);
-                g.FillPolygon(tick, new[]
-                {
-                    new PointF(cx + (float)Math.Cos(a) * r0, cy - (float)Math.Sin(a) * r0),
-                    new PointF(cx + (float)Math.Cos(a) * r1, cy - (float)Math.Sin(a) * r1),
-                    new PointF(cx + (float)Math.Cos(a2) * r1, cy - (float)Math.Sin(a2) * r1),
-                    new PointF(cx + (float)Math.Cos(a2) * r0, cy - (float)Math.Sin(a2) * r0),
-                });
-            }
-        }
-        Fill(g, Circle(cx, cy + 4, KnobR), C(0, 0, 0, 0.2));
-        FillV(g, Circle(cx, cy, KnobR), cy - KnobR, cy + KnobR, C(0.96, 0.96, 0.97), C(0.78, 0.78, 0.80));
-        FillRadial(g, cx, cy, KnobR - 7, new PointF(cx - 12, cy - 14), C(1, 1, 1), C(0.90, 0.90, 0.91));
-        double ang = (225 - 270 * Math.Clamp(value, 0, 1)) * Math.PI / 180;
-        float ca = (float)Math.Cos(ang), sa = (float)Math.Sin(ang), px = -sa, py = -ca;
-        float q0 = 12, q1 = KnobR - 10;
-        using var amber = new SolidBrush(Amber);
-        g.FillPolygon(amber, new[]
-        {
-            new PointF(cx + ca * q0 + px * 2, cy - sa * q0 + py * 2), new PointF(cx + ca * q1 + px * 2, cy - sa * q1 + py * 2),
-            new PointF(cx + ca * q1 - px * 2, cy - sa * q1 - py * 2), new PointF(cx + ca * q0 - px * 2, cy - sa * q0 - py * 2),
-        });
-    }
-
-    static void Fader(Graphics g, float value)
-    {
-        float x = FaderX;
-        for (int i = 0; i < 9; i++)
-        {
-            float y = FaderY1 - i * (FaderY1 - FaderY0) / 8;
-            Rect(g, x - 30, y - 0.6f, i == 4 ? 16 : 12, 1.2f, i == 4 ? Amber : TxtDim);
-        }
-        Fill(g, RRect(x - 4, FaderY0 - 8, 8, FaderY1 - FaderY0 + 16, 4), C(0.30, 0.30, 0.32));
-        float cy = FaderY1 - Math.Clamp(value, 0, 1) * (FaderY1 - FaderY0);
-        Fill(g, RRect(x - 22, cy - 11, 44, 26, 4), C(0, 0, 0, 0.2));
-        FillV(g, RRect(x - 22, cy - 14, 44, 28, 4), cy - 14, cy + 14, C(1, 1, 1), C(0.86, 0.86, 0.87));
-        Rect(g, x - 18, cy - 1, 36, 2, Amber);
-    }
-
-    static void Spindle(Graphics g)
-    {
-        FillV(g, Circle(0, 0, 30), -30, 30, C(0.80, 0.80, 0.82), C(0.45, 0.45, 0.47));
-        FillV(g, Circle(0, 0, 22), -22, 22, C(0.40, 0.40, 0.42), C(0.75, 0.75, 0.77));
-        for (int i = 0; i < 3; i++)
-        {
-            double a = i * 2 * Math.PI / 3 + 0.3;
-            Fill(g, Circle((float)Math.Cos(a) * 14, (float)Math.Sin(a) * 14, 3.2f), C(0.95, 0.95, 0.96));
-        }
-        Fill(g, Circle(0, 0, 5), C(0.15, 0.15, 0.16));
-    }
-
-    static void Disc(Graphics g, FaceState st)
-    {
-        Fill(g, Circle(DiscC.X + 3, DiscC.Y + 8, DiscR), C(0, 0, 0, 0.5));
-        var saved = g.Save();
-        g.TranslateTransform(DiscC.X, DiscC.Y);
-        g.RotateTransform(st.DiscAngle * 180f / MathF.PI);
-        FillRadial(g, 0, 0, DiscR, new PointF(-60, -80), C(0.86, 0.87, 0.89), C(0.70, 0.71, 0.74));
-        float pr = DiscR - 4;
-        if (st.Cover != null)
-        {
-            using var clip = Circle(0, 0, pr);
-            var s2 = g.Save();
-            g.SetClip(clip);
-            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-            g.DrawImage(st.Cover, -pr, -pr, 2 * pr, 2 * pr);
-            g.Restore(s2);
-        }
-        else
-        {
-            var col = st.DiscColor;
-            Fill(g, Circle(0, 0, pr), col);
-            bool light = col.R + col.G + col.B > 1.8 * 255;
-            var ink = light ? C(0.12, 0.12, 0.13) : C(0.95, 0.94, 0.90);
-            foreach (float rr in new[] { DiscR - 22, DiscR - 27, HubR + 24 })
-            {
-                Fill(g, Circle(0, 0, rr), Color.FromArgb(102, ink));
-                Fill(g, Circle(0, 0, rr - 1.2f), col);
-            }
-            var lines = st.DiscLines;
-            if (lines.Count > 0) Text(g, Trunc(lines[0], 22), 0, -128, 22, ink, Align.Center, true);
-            for (int i = 1; i < Math.Min(lines.Count, 5); i++) Text(g, Trunc(lines[i], 30), 0, -100 + (i - 1) * 16, 12, ink);
-            Text(g, "thisismade", 0, 150, 18, ink);
-            Text(g, "COMPACT DISC · DIGITAL AUDIO", 0, 170, 9, ink);
-            Fill(g, Circle(150, 0, 6), Amber);
-        }
-        Fill(g, Circle(0, 0, HubR), C(0.55, 0.57, 0.60));
-        Fill(g, Circle(0, 0, HubR - 3), C(0.30, 0.31, 0.33));
-        Spindle(g);
-        g.Restore(saved);
-    }
-
-    static string Trunc(string s, int n) => s.Length > n ? s[..n] : s;
 
     // ------------------------------------------------------------- Gesamtbild
     public static void Draw(Graphics g, FaceState st)
@@ -411,37 +353,50 @@ public static class Face
 
     static void DrawStatic(Graphics g)
     {
-        using (var p = new GraphicsPath())
-        {
-            p.AddRectangle(new RectangleF(-2, -2, DevW + 4, DevH + 4));
-            FillV(g, p, 0, DevH, C(0.985, 0.985, 0.98), C(0.90, 0.90, 0.90));
-        }
-        Rect(g, 0, 0.5f, DevW, 1.2f, C(1, 1, 1, 0.9));
+        Rect(g, -2, -2, DevW + 4, DevH + 4, Body);
 
-        Text(g, "thisismade", 40, 42, 24, C(0.12, 0.12, 0.13), Align.Left, true);
-        Text(g, "CD PLAYER  ·  CDP-2", 184, 41, 12, TxtDim, Align.Left);
+        using (var dot = new SolidBrush(Dot))
+        {
+            for (int j = 13; j < DevH - 8; j += 16)
+                for (int i = 13; i < 600; i += 16)
+                {
+                    float dx = i - DiscC.X, dy = j - DiscC.Y;
+                    if (dx * dx + dy * dy < (WellR + 10) * (WellR + 10)) continue;
+                    g.FillEllipse(dot, i - 1.1f, j - 1.1f, 2.2f, 2.2f);
+                }
+        }
+
+        Ln(g, 610, 14, 610, DevH - 14, Line_);
+        Ln(g, 620, 255, DevW - 14, 255, Line_);
+        Ln(g, 620, 392, DevW - 14, 392, Line_);
+        Ln(g, 620, 578, 1075, 578, Line_);
+        Ln(g, 1075, 255, 1075, DevH - 14, Line_);
+
+        Text(g, "thisismade", 30, 44, 24, Ink, Align.Left, true);
+        MonoText(g, "CDP-2 / COMPACT DISC PLAYER", 31, 62, 10, TxtDim);
+        Stroke(g, RRect(520, 34, 54, 14, 7), Orange);
+        MonoText(g, "AUDIO", 547, 45, 9, Orange, Align.Center);
 
         float cx = DiscC.X, cy = DiscC.Y;
-        Fill(g, Circle(cx, cy, WellR + 3), C(0.80, 0.80, 0.81));
-        FillRadial(g, cx, cy, WellR, new PointF(cx, cy - 40), C(0.10, 0.10, 0.11), C(0.05, 0.05, 0.055));
-        var s = g.Save();
-        g.TranslateTransform(cx, cy);
-        g.RotateTransform(135);
-        Fill(g, RRect(60, -20, 190, 40, 8), C(0.02, 0.02, 0.025));
-        Fill(g, Circle(150, 0, 9), C(0.20, 0.22, 0.30));
-        Fill(g, Circle(150, 0, 4), C(0.45, 0.50, 0.75));
-        g.Restore(s);
+        FillStroke(g, Circle(cx, cy, WellR), C(0.90, 0.90, 0.895), Line_);
+        for (int rr = 80; rr < WellR - 6; rr += 18) Stroke(g, Circle(cx, cy, rr), C(0.84, 0.84, 0.84));
+        for (int k = 0; k < 12; k++)
+        {
+            double a = 2 * Math.PI * k / 12;
+            Ln(g, cx + (float)Math.Cos(a) * (WellR - 10), cy + (float)Math.Sin(a) * (WellR - 10),
+               cx + (float)Math.Cos(a) * (WellR - 2), cy + (float)Math.Sin(a) * (WellR - 2), TxtDim);
+        }
 
         var d = Display;
-        Fill(g, RRect(d.X - 6, d.Y - 6, d.Width + 12, d.Height + 12, 12), C(0.80, 0.80, 0.81));
-        FillV(g, RRect(d.X, d.Y, d.Width, d.Height, 7), d.Top, d.Bottom, C(0.045, 0.025, 0.025), C(0.07, 0.035, 0.035));
+        FillStroke(g, RRect(d.X - 4, d.Y - 4, d.Width + 8, d.Height + 8, 8), C(0.06, 0.05, 0.045), C(0.55, 0.55, 0.56));
 
-        Text(g, "VOLUME", KnobC.X, KnobC.Y + KnobR + 26, 11, TxtDim);
-        Text(g, "MEMORY", 630, MemY - 10, 11, TxtDim, Align.Left);
-        Text(g, "SHUTTLE", Shuttle.X, MemY - 10, 11, TxtDim, Align.Left);
-        Text(g, "TEMPO", FaderX, FaderY0 - 30, 11, TxtDim);
-        Text(g, "+", FaderX + 26, FaderY0 + 4, 12, TxtDim);
-        Text(g, "−", FaderX + 26, FaderY1 + 4, 12, TxtDim);
+        foreach (var (t, tx, ty) in new (string, float, float)[]
+                 {
+                     ("01  NUMBER", 630, 266), ("02  VOLUME", 1086, 268), ("03  MEMORY", 630, 406),
+                     ("04  SHUTTLE", 890, 406), ("05  TRANSPORT", 630, 476), ("06  TEMPO", 1086, 406),
+                     ("07  MODE", 630, 588),
+                 })
+            MonoText(g, t, tx, ty, 9, TxtDim);
     }
 
     static void DrawDynamic(Graphics g, FaceState st)
@@ -451,11 +406,14 @@ public static class Face
 
         foreach (var b in TopBtns)
         {
-            Button(g, b.x, TopY, TopW, TopH, P.Contains(b.id), Style.Small, b.text, 10, null, 5);
-            if (b.id == "power") Fill(g, Circle(b.x + 9, TopY + 13, 2.6f), on ? LedOn : LedOff);
+            bool pr = P.Contains(b.id);
+            FillStroke(g, RRect(b.x, TopY, TopW, TopH - 2, 12), pr ? Orange : Body,
+                       pr || b.id == "power" ? Orange : Line_);
+            MonoText(g, b.text.ToLowerInvariant(), b.x + TopW / 2, TopY + 16, 10,
+                     pr ? Body : b.id == "power" ? Orange : Ink, Align.Center);
         }
-        Fill(g, Circle(1146, 31, 3), st.MediaLed && on ? C(0.30, 0.65, 1.0) : LedOff);
-        Text(g, "MEDIA", 1156, 35, 9, TxtDim, Align.Left);
+        Led(g, 1146, 31, st.MediaLed && on);
+        MonoText(g, "media", 1155, 35, 8, TxtDim);
 
         if (st.DiscLoaded) Disc(g, st);
         else
@@ -465,59 +423,153 @@ public static class Face
             g.RotateTransform(st.DiscAngle * 180f / MathF.PI);
             Spindle(g);
             g.Restore(s);
-            Text(g, "NO DISC", DiscC.X, DiscC.Y + 70, 14, C(0.85, 0.85, 0.86));
-            Text(g, "OPEN = Ordner · FILES = Dateien · oder hierher ziehen", DiscC.X, DiscC.Y + 92, 11, TxtDim);
+            MonoText(g, "no disc", DiscC.X, DiscC.Y + 70, 13, Ink, Align.Center);
+            MonoText(g, "open / files / drop", DiscC.X, DiscC.Y + 90, 10, TxtDim, Align.Center);
         }
 
         DrawDisplay(g, st);
 
         foreach (var k in Keys)
         {
-            string t = k.lab == "T" ? "TIME" : k.lab == "C" ? "CLR" : k.lab;
-            Button(g, k.x, k.y, KeyW, KeyH, P.Contains("key_" + k.lab), Style.Key, t, t.Length == 1 ? 17 : 11);
+            float cx = k.x + KeyW / 2, cy = k.y + KeyH / 2 + 6;
+            bool pr = P.Contains("key_" + k.lab);
+            RoundKey(g, cx, cy, 19, pr, k.lab is "T" or "C" ? KeyHi : Key);
+            string t = k.lab == "T" ? "time" : k.lab == "C" ? "clr" : k.lab;
+            MonoText(g, t, cx, cy + (t.Length == 1 ? 5 : 3.5f), t.Length == 1 ? 15 : 10, pr ? Body : Ink, Align.Center);
         }
-        Button(g, Enter.X, Enter.Y, Enter.Width, Enter.Height, P.Contains("enter"), Style.Key, "ENTER", 12);
+        bool pe = P.Contains("enter");
+        SquareKey(g, Enter.X, Enter.Y + 12, Enter.Width, Enter.Height - 14, pe, KeyHi, 10);
+        MonoText(g, "enter", Enter.X + Enter.Width / 2, Enter.Y + 12 + (Enter.Height - 14) / 2 + 4, 11, pe ? Body : Orange, Align.Center);
 
         Knob(g, st.LevelNorm);
 
         for (int i = 0; i < Mem.Length; i++)
-            Button(g, Mem[i].x, MemY, MemW, MemH, P.Contains(Mem[i].id), Style.Key, Mem[i].text, 17, st.CueSet[i] && on);
+        {
+            bool pr = P.Contains(Mem[i].id);
+            SquareKey(g, Mem[i].x, MemY + 2, MemW, MemH - 6, pr, Key, 8);
+            MonoText(g, Mem[i].text.ToLowerInvariant(), Mem[i].x + 16, MemY + 28, 15, pr ? Body : Ink);
+            Led(g, Mem[i].x + MemW - 14, MemY + 19, st.CueSet[i] && on);
+        }
 
         var sh = Shuttle;
-        Fill(g, RRect(sh.X, sh.Y + 12, sh.Width, sh.Height - 24, 10), C(0.30, 0.30, 0.32));
-        Text(g, "REW", sh.X + 16, sh.Bottom + 14, 10, TxtDim);
-        Text(g, "FF", sh.Right - 12, sh.Bottom + 14, 10, TxtDim);
+        float scy = sh.Y + sh.Height / 2 + 2;
+        Ln(g, sh.X, scy, sh.Right, scy, Line_, 2);
+        for (int k = -3; k <= 3; k++)
+        {
+            float tx = sh.X + sh.Width / 2 + k * sh.Width / 7;
+            Ln(g, tx, scy - 6, tx, scy + 6, k == 0 ? Orange : TxtDim);
+        }
+        MonoText(g, "rew", sh.X, sh.Bottom + 12, 9, TxtDim);
+        MonoText(g, "ff", sh.Right, sh.Bottom + 12, 9, TxtDim, Align.Right);
         float jx = sh.X + sh.Width / 2 + st.Jog * JogTravel;
-        Fill(g, RRect(jx - 22, sh.Y + 4, 44, sh.Height - 4, 6), C(0, 0, 0, 0.2));
-        FillV(g, RRect(jx - 22, sh.Y, 44, sh.Height - 4, 6), sh.Y, sh.Bottom, C(1, 1, 1), C(0.86, 0.86, 0.87));
-        Rect(g, jx - 1.5f, sh.Y + 6, 3, sh.Height - 16, Amber);
+        Rect(g, jx - 10, scy - 12, 20, 24, Orange);
 
         Fader(g, st.VarispeedNorm);
 
         foreach (var t in Transport)
         {
-            float oy = Button(g, t.x, TrY, t.w, TrH, P.Contains(t.id), t.id == "play" ? Style.AmberKey : Style.Key);
-            Icon(g, t.id, t.x + t.w / 2, TrY + oy + TrH / 2 - 2, t.id == "play" ? C(0.16, 0.10, 0.04) : C(0.18, 0.18, 0.20));
+            bool pr = P.Contains(t.id), play = t.id == "play";
+            SquareKey(g, t.x, TrY + 6, t.w, TrH - 12, pr, play ? Orange : Key, 12);
+            Icon(g, t.id, t.x + t.w / 2, TrY + TrH / 2, pr || play ? Body : Ink);
         }
 
         foreach (var s in Small)
         {
+            bool pr = P.Contains(s.id);
             bool? led = s.id switch
             {
-                "keylock" => st.KeyLock && on,
-                "repeat" => st.RepeatMode > 0 && on,
-                "shuffle" => st.Shuffle && on,
+                "keylock" => st.KeyLock,
+                "repeat" => st.RepeatMode > 0,
+                "shuffle" => st.Shuffle,
                 _ => null,
             };
-            Button(g, s.x, SmallY, SmallW, SmallH, P.Contains(s.id), Style.Small, s.text, 10, led, 5);
+            FillStroke(g, RRect(s.x, SmallY + 12, SmallW, SmallH - 8, 13), pr ? Orange : Body, pr ? Orange : Line_);
+            MonoText(g, s.text.ToLowerInvariant(), s.x + SmallW / 2 - (led.HasValue ? 6 : 0), SmallY + 29, 9,
+                     pr ? Body : Ink, Align.Center);
+            if (led.HasValue) Led(g, s.x + SmallW - 12, SmallY + 25, led.Value && on);
         }
 
         if (!on)
         {
-            using var p = new GraphicsPath();
-            p.AddRectangle(new RectangleF(0, 0, DevW, DevH));
-            Fill(g, p.Clone() as GraphicsPath, C(0, 0, 0, 0.12));
+            using var b = new SolidBrush(C(0, 0, 0, 0.12));
+            g.FillRectangle(b, 0, 0, DevW, DevH);
         }
+    }
+
+    static void Spindle(Graphics g)
+    {
+        FillStroke(g, Circle(0, 0, 26), C(0.86, 0.86, 0.86), Line_);
+        Fill(g, Circle(0, 0, 7), Orange);
+    }
+
+    static void Disc(Graphics g, FaceState st)
+    {
+        var saved = g.Save();
+        g.TranslateTransform(DiscC.X, DiscC.Y);
+        g.RotateTransform(st.DiscAngle * 180f / MathF.PI);
+        Fill(g, Circle(0, 2, DiscR), C(0, 0, 0, 0.10));
+        FillStroke(g, Circle(0, 0, DiscR), C(0.995, 0.995, 0.99), Line_);
+        if (st.Cover != null)
+        {
+            using var clip = Circle(0, 0, DiscR - 2);
+            var s2 = g.Save();
+            g.SetClip(clip);
+            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+            g.DrawImage(st.Cover, -(DiscR - 2), -(DiscR - 2), 2 * (DiscR - 2), 2 * (DiscR - 2));
+            g.Restore(s2);
+        }
+        else
+        {
+            var ink = C(0.10, 0.10, 0.11);
+            Stroke(g, Circle(0, 0, DiscR - 14), C(0.80, 0.80, 0.81));
+            Stroke(g, Circle(0, 0, HubR + 30), C(0.80, 0.80, 0.81));
+            var lines = st.DiscLines;
+            if (lines.Count > 0) Text(g, Trunc(lines[0], 22).ToLowerInvariant(), -150, -120, 22, ink, Align.Left, true);
+            for (int i = 1; i < Math.Min(lines.Count, 5); i++)
+                MonoText(g, Trunc(lines[i], 30).ToLowerInvariant(), -150, -96 + (i - 1) * 15, 10, C(0.30, 0.30, 0.32));
+            MonoText(g, "thisismade / cdp-2", -150, 170, 10, ink);
+            Rect(g, DiscR - 40, -5, 24, 10, Orange);
+        }
+        FillStroke(g, Circle(0, 0, HubR), C(0.93, 0.93, 0.93), Line_);
+        Spindle(g);
+        g.Restore(saved);
+    }
+
+    static string Trunc(string s, int n) => s.Length > n ? s[..n] : s;
+
+    static void Knob(Graphics g, float value)
+    {
+        // mittig im Kasten "02 VOLUME" (x 1075…1186, y 255…392), samt Skala
+        const float cx = 1131, cy = 331, r = 33;
+        for (int i = 0; i < 31; i++)
+        {
+            double a = (225 - 9 * i) * Math.PI / 180;
+            float r0 = r + 5, r1 = r + (i % 5 == 0 ? 12 : 8);
+            bool lit = i / 30f <= value + 1e-6f;
+            Ln(g, cx + (float)Math.Cos(a) * r0, cy - (float)Math.Sin(a) * r0,
+               cx + (float)Math.Cos(a) * r1, cy - (float)Math.Sin(a) * r1, lit ? Orange : Line_, i % 5 == 0 ? 1.4f : 1f);
+        }
+        FillStroke(g, Circle(cx, cy, r), Key, Line_);
+        double an = (225 - 270 * Math.Clamp(value, 0, 1)) * Math.PI / 180;
+        using var pen = new Pen(Orange, 3f) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+        g.DrawLine(pen, cx + (float)Math.Cos(an) * 10, cy - (float)Math.Sin(an) * 10,
+                   cx + (float)Math.Cos(an) * (r - 6), cy - (float)Math.Sin(an) * (r - 6));
+    }
+
+    static void Fader(Graphics g, float value)
+    {
+        float x = FaderX, y0 = FaderY0 + 4, y1 = FaderY1 - 10;
+        Ln(g, x, y0, x, y1, Line_, 2);
+        for (int i = 0; i < 11; i++)
+        {
+            float y = y1 - i * (y1 - y0) / 10;
+            Ln(g, x + 18, y, x + (i % 5 == 0 ? 30 : 24), y, i == 5 ? Orange : TxtDim);
+        }
+        MonoText(g, "+", x - 26, y0 + 8, 11, TxtDim);
+        MonoText(g, "-", x - 26, y1 + 2, 11, TxtDim);
+        float cy = y1 - Math.Clamp(value, 0, 1) * (y1 - y0);
+        Rect(g, x - 16, cy - 9, 32, 18, C(0.16, 0.16, 0.17));
+        Rect(g, x - 16, cy - 1, 32, 2, Orange);
     }
 
     static void DrawDisplay(Graphics g, FaceState st)
@@ -541,6 +593,7 @@ public static class Face
             Digits(g, main[6..9], x + 254, y + 38, dw, dh, pitch);
             foreach (float dy in new[] { 14f, 32f }) Fill(g, Circle(x + 362 + (46 - dy) * 0.08f, y + 38 + dy, 3), L(true));
             Digits(g, main[10..12], x + 372, y + 38, dw, dh, pitch);
+            if (on) TitleLine(g, st, x, y, w, L(true));
         }
         var ind = new (string, bool)[]
         {
@@ -548,7 +601,7 @@ public static class Face
             ("KEY LOCK", st.KeyLock), ("PAUSE", st.Paused), ("REMAIN", st.Remain),
         };
         for (int i = 0; i < ind.Length; i++) Text(g, ind[i].Item1, x + w - 14, y + 26 + i * 15, 10, L(ind[i].Item2), Align.Right);
-        float by = y + 118;
+        float by = y + 126;
         Text(g, "TEMPO", x + 18, by - 6, 10, L(true), Align.Left);
         Digits(g, on ? st.VsText : "   ", x + 18, by, 15, 26, 20);
         Text(g, "%", x + 84, by + 25, 12, L(true), Align.Left);
@@ -569,5 +622,32 @@ public static class Face
                      isOn ? (hot ? C(1.0, 0.62, 0.14) : SegOn) : (hot ? C(0.20, 0.11, 0.03) : SegOff));
             }
         }
+    }
+
+    static readonly System.Diagnostics.Stopwatch Clock = System.Diagnostics.Stopwatch.StartNew();
+
+    /// <summary>Titel (Laufschrift bei langen Namen) und Auflösung, innerhalb des Displays.</summary>
+    static void TitleLine(Graphics g, FaceState st, float x, float y, float w, Color col)
+    {
+        string title = st.Title ?? "", res = st.Resolution ?? "";
+        float ty = y + 101;
+        var f = GetFont(11, true);
+        float ascent = 11 * f.FontFamily.GetCellAscent(f.Style) / f.FontFamily.GetEmHeight(f.Style);
+        float rw = res.Length > 0 ? g.MeasureString(res, f, PointF.Empty, Typo).Width : 0;
+        using var b = new SolidBrush(col);
+        if (res.Length > 0) g.DrawString(res, f, b, x + w - 14 - rw, ty - ascent, Typo);
+        if (title.Length == 0) return;
+        float boxX = x + 18, boxW = w - 32 - rw - (res.Length > 0 ? 16 : 0);
+        float tw = g.MeasureString(title, f, PointF.Empty, Typo).Width;
+        var saved = g.Save();
+        g.SetClip(new RectangleF(boxX, ty - 13, boxW, 17));
+        if (tw <= boxW) g.DrawString(title, f, b, boxX, ty - ascent, Typo);
+        else
+        {
+            const float gap = 50;
+            float off = (float)(Clock.Elapsed.TotalSeconds * 28 % (tw + gap));
+            for (int k = 0; k < 2; k++) g.DrawString(title, f, b, boxX - off + k * (tw + gap), ty - ascent, Typo);
+        }
+        g.Restore(saved);
     }
 }

@@ -597,14 +597,16 @@ sealed class MainForm : Form
             t.Stop();
             peakTimer.Stop();
             double pos2 = player.Engine.Position;
-            bool ok = player.Engine.State == PlayState.Playing && pos1 > 0.5 && pos2 > pos1 + 1.0 && maxPeak > 0.05f && player.Tracks.Count == 1;
+            var fs = player.State();
+            bool ok = player.Engine.State == PlayState.Playing && pos1 > 0.5 && pos2 > pos1 + 1.0 && maxPeak > 0.05f && player.Tracks.Count == 1
+                      && fs.Resolution.Contains("kHz") && fs.Title.Length > 0;
             var shot = Environment.GetEnvironmentVariable("TMPLAYER_SCREENSHOT") ?? "screenshot.png";
             using (var bmp = new Bitmap(1200, 660))
             {
                 using (var g = Graphics.FromImage(bmp)) Face.Draw(g, player.State());
                 bmp.Save(shot, ImageFormat.Png);
             }
-            var line = $"SELFTEST {(ok ? "OK" : "FAILED")} state={player.Engine.State} pos1={pos1:F2} pos2={pos2:F2} peak={maxPeak:F2} tracks={player.Tracks.Count} keylock={player.Engine.KeyLock}";
+            var line = $"SELFTEST {(ok ? "OK" : "FAILED")} state={player.Engine.State} pos1={pos1:F2} pos2={pos2:F2} peak={maxPeak:F2} tracks={player.Tracks.Count} keylock={player.Engine.KeyLock} title={fs.Title} res={fs.Resolution}";
             File.WriteAllText(Environment.GetEnvironmentVariable("TMPLAYER_RESULT") ?? "selftest.txt", line);
             Environment.ExitCode = ok ? 0 : 1;
             Close();

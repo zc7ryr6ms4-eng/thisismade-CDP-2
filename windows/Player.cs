@@ -11,6 +11,7 @@ public sealed class Track
     public string Title;
     public string Artist;
     public string Album;
+    public string Resolution;
 }
 
 public sealed class Settings
@@ -486,7 +487,7 @@ public sealed class Player : IDisposable
         if (src.StartsWith("cdda://")) return;
         Task.Run(() =>
         {
-            string title = null, artist = null, album = null;
+            string title = null, artist = null, album = null, res = null;
             byte[] art = null;
             try
             {
@@ -495,6 +496,7 @@ public sealed class Player : IDisposable
                 artist = f.Tag.FirstPerformer ?? f.Tag.FirstAlbumArtist;
                 album = f.Tag.Album;
                 if (f.Tag.Pictures?.Length > 0) art = f.Tag.Pictures[0].Data.Data;
+                res = ResolutionText(f.Properties, System.IO.Path.GetExtension(src));
             }
             catch { }
             art ??= FolderCover(src);
@@ -503,18 +505,49 @@ public sealed class Player : IDisposable
             {
                 try { img = SquareCrop(Image.FromStream(new MemoryStream(art))); } catch { }
             }
-            return (title, artist, album, img);
+            return (title, artist, album, img, res);
         }).ContinueWith(task =>
         {
             if (token != metaToken || i >= Tracks.Count) return;
-            var (title, artist, album, img) = task.Result;
+            var (title, artist, album, img, res) = task.Result;
             if (!string.IsNullOrWhiteSpace(title)) Tracks[i].Title = title;
             Tracks[i].Artist = artist;
             Tracks[i].Album = album;
+            Tracks[i].Resolution = res;
             cover = img;
             UpdateDisc();
             UpdateNowPlaying();
         }, TaskScheduler.FromCurrentSynchronizationContext());
+    }
+
+    /// <summary>z. B. "44.1 kHz · 24 bit · FLAC" oder "44.1 kHz · 320 kbps · MP3".</summary>
+    static string ResolutionText(TagLib.Properties p, string ext)
+    {
+        if (p == null) return null;
+        var parts = new List<string>();
+        if (p.AudioSampleRate > 0)
+            parts.Add((p.AudioSampleRate / 1000.0).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture) + " kHz");
+        bool lossy = ext.ToLowerInvariant() is ".mp3" or ".aac" or ".m4a" or ".mp4" or ".wma" or ".mp2" or ".ac3" or ".ec3";
+        if (lossy && p.AudioBitrate > 0) parts.Add(p.AudioBitrate + " kbps");
+        else if (p.BitsPerSample > 0) parts.Add(p.BitsPerSample + " bit");
+        if (ext.Length > 1) parts.Add(ext.TrimStart('.').ToUpperInvariant());
+        return string.Join(" · ", parts);
+    }
+
+    string TitleText()
+    {
+        if (!HasTracks) return "";
+        var t = Tracks[Index];
+        var s = string.IsNullOrEmpty(t.Artist) ? t.Title : t.Artist + " – " + t.Title;
+        return (s ?? "").ToUpperInvariant();
+    }
+
+    string ResText()
+    {
+        if (!HasTracks) return "";
+        var t = Tracks[Index];
+        if (t.Source.StartsWith("cdda://")) return "44.1 kHz · 16 bit · CD";
+        return t.Resolution ?? "";
     }
 
     static byte[] FolderCover(string path)
@@ -616,6 +649,7 @@ public sealed class Player : IDisposable
             CueSet = CueList().Select(c => c >= 0).ToArray(),
             VarispeedNorm = (Varispeed - VsMin) / (float)(VsMax - VsMin), LevelNorm = Level / 100f, Jog = Jog,
             RepeatMode = RepeatMode, Shuffle = Shuffle, Paused = Engine.State == PlayState.Paused, Remain = TimeMode == 1,
+            Title = TitleText(), Resolution = ResText(),
         };
     }
 

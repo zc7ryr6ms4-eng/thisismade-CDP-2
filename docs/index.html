@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>thisismade cdp-2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE occasion: a quiet product launch for one maker's own software
+   IDEA the brand's dark chalkboard card, with the [ bracket as the recurring mark
+   PICTURE the thisismade.de board full-bleed, then the player itself, large
+   COLOUR charcoal #15191b, chalk white, slate greys, one orange #ff6a00 from the player's PLAY key
+   TYPE Inter 300 for headings (like the thin logo), Inter 400/500 for text
+   LAYOUT board as first screen with nav on top and title in the lower band; player, downloads in three columns, features, footer */
+:root{color-scheme:dark;--bg:#15191b;--bg2:#1c2224;--panel:#21282b;--line:#323b3e;--ink:#eef0ef;--dim:#a3abad;--accent:#ff6a00;--accent-ink:#1a0d03}
+*{box-sizing:border-box;min-width:0}
+html{scroll-padding-top:72px;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Inter,"Helvetica Neue",Helvetica,Arial,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+img{max-width:100%;height:auto;display:block}
+.wrap{max-width:1240px;margin:0 auto}
+.band{padding-block:clamp(40px,6vw,96px);padding-left:max(5vw,16px,env(safe-area-inset-left,0px));padding-right:max(5vw,16px,env(safe-area-inset-right,0px))}
+
+/* Kopf */
+nav{position:absolute;inset:0 0 auto 0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px max(5vw,16px)}
+.mark{font-weight:300;font-size:20px;letter-spacing:-.01em;text-decoration:none;color:var(--ink)}
+.mark b{font-weight:300;color:var(--dim)}
+nav ul{display:flex;gap:6px;list-style:none;margin:0;padding:0;flex-wrap:wrap}
+nav li a{display:inline-flex;align-items:center;min-height:40px;padding:0 14px;border-radius:20px;text-decoration:none;color:var(--dim);font-size:15px}
+nav li a:hover,nav li a:focus-visible{color:var(--ink);background:rgba(255,255,255,.07)}
+
+/* Bühne */
+.hero{position:relative;min-height:min(100svh,940px);background:#111 url("bg.jpg") center 42%/cover no-repeat;display:flex;align-items:flex-end}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,rgba(21,25,27,0) 55%,rgba(21,25,27,.85) 88%,var(--bg) 100%);pointer-events:none}
+.hero-text{position:relative;z-index:1;width:100%;padding:0 max(5vw,16px) clamp(32px,5vw,64px);display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px 40px;align-items:end;max-width:1340px;margin:0 auto}
+h1{font-weight:300;font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-.02em;margin:0 0 10px;text-wrap:balance}
+h1 span{color:var(--dim)}
+.lead{margin:0;color:var(--dim);font-size:17px;max-width:56ch}
+.cta{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:10px;min-height:48px;padding:0 22px;border-radius:24px;font:500 16px/1 Inter,sans-serif;text-decoration:none;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+.btn:hover{border-color:#56615f}
+.btn:focus-visible,.copy:focus-visible,nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn.main{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.main:hover{background:#ff8128}
+.note{font-size:13px;color:var(--dim)}
+
+/* Player */
+.player{background:var(--bg)}
+.player .wrap{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:clamp(28px,4vw,56px);align-items:center}
+.shot{filter:drop-shadow(0 24px 40px rgba(0,0,0,.45))}
+h2{font-weight:300;font-size:clamp(28px,3.6vw,40px);line-height:1.1;letter-spacing:-.02em;margin:0 0 14px;text-wrap:balance}
+.player p{color:var(--dim);margin:0 0 12px}
+.br{color:var(--accent);font-weight:300;margin-right:4px}
+
+/* Downloads */
+.dl{background:var(--bg2);border-block:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;margin-top:28px}
+.os{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.os.mine{border-color:var(--accent)}
+.os h3{margin:0;font-weight:400;font-size:22px;display:flex;align-items:center;gap:12px}
+.os h3 svg{width:28px;height:28px;flex:none}
+.os .req{margin:-6px 0 0;color:var(--dim);font-size:14px}
+.tag{display:none;font-size:13px;color:var(--accent)}
+.os.mine .tag{display:block}
+.files{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.files a{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:48px;padding:10px 14px;border-radius:10px;border:1px solid var(--line);text-decoration:none;background:var(--bg2)}
+.files a:hover{border-color:#56615f}
+.files a.first{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.files small{white-space:nowrap;opacity:.75;font-size:13px}
+.cmd{background:#0e1112;border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start}
+.cmd code{flex:1;font:13px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:#d9dedc;overflow-wrap:anywhere}
+.copy{flex:none;min-height:32px;padding:0 12px;border-radius:16px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:500 13px Inter,sans-serif;cursor:pointer}
+.hint{font-size:14px;color:var(--dim);margin:0}
+.more{margin-top:26px;color:var(--dim);font-size:15px}
+
+/* Funktionen */
+.feat .wrap>p{color:var(--dim);max-width:62ch;margin:0}
+.flist{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:28px 40px;margin-top:32px}
+.flist h4{margin:0 0 6px;font-weight:500;font-size:17px}
+.flist p{margin:0;color:var(--dim);font-size:15px}
+
+footer{border-top:1px solid var(--line);padding:28px max(5vw,16px);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--dim);font-size:14px}
+footer a{color:var(--ink)}
+
+@media(max-width:900px){.player .wrap{grid-template-columns:minmax(0,1fr)}.grid{grid-template-columns:minmax(0,1fr)}.flist{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.hero{min-height:0;background:var(--bg) url("bg.jpg") center 64px/130% auto no-repeat;padding-top:calc(73vw + 64px)}.hero::after{background:linear-gradient(to bottom,rgba(21,25,27,0) 0,rgba(21,25,27,0) calc(73vw - 30px),var(--bg) calc(73vw + 64px))}.hero-text{grid-template-columns:minmax(0,1fr)}.flist{grid-template-columns:minmax(0,1fr)}nav li:not(.keep){display:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+</head>
+<body>
+
+<header class="hero" id="top">
+  <nav aria-label="Hauptnavigation">
+    <a class="mark" href="#top">[thisismade<b>.de</b></a>
+    <ul>
+      <li><a href="#player">Player</a></li>
+      <li class="keep"><a href="#download">Download</a></li>
+      <li><a href="#funktionen">Funktionen</a></li>
+      <li><a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2" target="_blank" rel="noopener">GitHub</a></li>
+    </ul>
+  </nav>
+  <div class="hero-text">
+    <div>
+      <h1>cdp-2 <span>CD-Player-Software</span></h1>
+      <p class="lead">Ein Musikplayer, der sich wie ein CD-Deck bedient: drehende Disc, rotes Display, Tempo mit Key Lock, Memory-Cues und Shuttle. Für Windows&nbsp;11, macOS und Ubuntu.</p>
+    </div>
+    <div class="cta">
+      <a class="btn main" id="heroBtn" href="#download">Herunterladen</a>
+      <span class="note" id="heroNote">Version 1.0.0 · kostenlos · BSD-Lizenz</span>
+    </div>
+  </div>
+</header>
+
+<section class="band player" id="player">
+  <div class="wrap">
+    <img class="shot" src="player.png" width="1256" height="724" alt="Die Gerätefront von thisismade cdp-2: weiße Front mit drehender Disc, rotem Display, Ziffernblock, Laufwerkstasten, Lautstärkeregler und Tempo-Fader">
+    <div>
+      <h2><span class="br">[</span>Ein Gerät auf dem Bildschirm</h2>
+      <p>Die Disc dreht sich mit, solange Musik läuft, und lässt sich mit der Maus scratchen. Das Display zeigt Titel, Spielzeit, Auflösung und Pegel.</p>
+      <p>Alles wird bedient wie am echten Deck: Titelnummer tippen und ENTER, Cue-Punkte auf A, B und C, Tempo am Fader.</p>
+    </div>
+  </div>
+</section>
+
+<section class="band dl" id="download">
+  <div class="wrap">
+    <h2><span class="br">[</span>Download</h2>
+    <p class="hint">Alle Dateien kommen direkt aus dem GitHub-Release von thisismade cdp-2.</p>
+    <div class="grid" id="osGrid"></div>
+    <p class="more">Die Installer sind nicht kostenpflichtig signiert. Windows zeigt beim ersten Start „Der Computer wurde durch Windows geschützt“ → <em>Weitere Informationen → Trotzdem ausführen</em>; auf dem Mac in den Systemeinstellungen unter Datenschutz &amp; Sicherheit auf „Dennoch öffnen“ klicken.
+      Ältere Version: <a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-1/releases" target="_blank" rel="noopener">thisismade CDP-1</a>.</p>
+  </div>
+</section>
+
+<section class="band feat" id="funktionen">
+  <div class="wrap">
+    <h2><span class="br">[</span>Funktionen</h2>
+    <p>Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: MP3, FLAC, WAV, AIFF, AAC/M4A, ALAC und mehr.</p>
+    <div class="flist" id="flist"></div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 thisismade · thisismade cdp-2 · BSD-3-Clause</span>
+  <span><a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2" target="_blank" rel="noopener">Quellcode auf GitHub</a> · <a href="https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2/issues" target="_blank" rel="noopener">Fehler melden</a></span>
+</footer>
+
+<script>
+{
+  const REL = "https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2/releases/latest/download/";
+  const RAW = "https://raw.githubusercontent.com/zc7ryr6ms4-eng/thisismade-CDP-2/main/";
+  const icons = {
+    win: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.5 4.4v7H3zM11.5 4.3 21 3v8.4h-9.5zM3 12.5h7.5v7.1L3 18.5zM11.5 12.5H21V21l-9.5-1.3z"/></svg>',
+    mac: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.5 2-3.6-1.1-1.6-2.8-1.8-3.4-1.8-1.4-.1-2.8.9-3.5.9s-1.8-.9-3-.9C7 7.2 5.5 8.1 4.7 9.6c-1.7 2.9-.4 7.1 1.2 9.4.8 1.1 1.7 2.4 2.9 2.4s1.6-.8 3-.8 1.8.8 3 .8 2-1.1 2.8-2.3c.9-1.3 1.2-2.5 1.2-2.6 0 0-2.4-.9-2.4-3.9zM14.1 5.5c.6-.8 1.1-1.8 1-2.9-.9 0-2.1.6-2.7 1.4-.6.7-1.1 1.8-1 2.8 1 .1 2-.5 2.7-1.3z"/></svg>',
+    lin: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="19.5" cy="9" r="1.8" fill="currentColor"/><circle cx="6.5" cy="17" r="1.8" fill="currentColor"/><circle cx="8" cy="5.6" r="1.8" fill="currentColor"/></svg>'
+  };
+  const systems = [
+    { id: "win", name: "Windows 11", req: "auch Windows 10 · 64 Bit · .NET ist enthalten",
+      files: [["thisismade-cdp-2-Setup-1.0.0.exe", "Setup (empfohlen)", "68 MB"],
+              ["thisismade-cdp-2-portable-win-x64.zip", "Portable, ohne Installation", "68 MB"]],
+      hint: "Setup starten: legt den Player im Startmenü an und trägt ihn unter „Öffnen mit“ ein." },
+    { id: "mac", name: "macOS", req: "ab macOS 13 Ventura · Apple Silicon und Intel",
+      files: [["thisismade-cdp-2-1.0.0.pkg", "Installationspaket (empfohlen)", "0,6 MB"],
+              ["thisismade-cdp-2.dmg", "Disk-Image", "0,9 MB"]],
+      cmd: "curl -fsSL " + RAW + "install-mac.sh | bash",
+      hint: "Oder im Terminal: lädt die App, legt sie in Programme und startet sie." },
+    { id: "lin", name: "Ubuntu", req: "ab Ubuntu 24.04 · GNOME",
+      files: [["thisismade-cdp-2_1.0.0_all.deb", "Debian-Paket (empfohlen)", "29 KB"],
+              ["thisismade-cdp-2_1.0.0_amd64.snap", "Snap, nur Wayland", "122 MB"]],
+      cmd: "wget -qO- " + RAW + "install.sh | bash",
+      hint: "Oder im Terminal: installiert den Player samt allem, was er braucht." }
+  ];
+  const features = [
+    ["Drehende Disc", "Klick spielt oder pausiert, Drehen mit der Maus scratcht durch den Titel."],
+    ["Tempo und Key Lock", "50 bis 150 Prozent. Mit Key Lock bleibt die Tonhöhe, ohne ändert sie sich mit."],
+    ["Memory A · B · C", "Drei Cue-Punkte pro Titel, gespeichert. Gedrückt halten setzt neu."],
+    ["Shuttle", "Vor- und Rücklauf bis 16-fach, je weiter der Schieber, desto schneller."],
+    ["Rotes Display", "Titel als Laufschrift, Zeit, Restzeit, Auflösung, Tempo, Lautstärke und Pegel L/R."],
+    ["Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von Windows, macOS und GNOME."]
+  ];
+
+  const ua = navigator.userAgent || "";
+  const mine = /Windows/i.test(ua) ? "win" : /Mac OS X|Macintosh/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "lin" : "";
+
+  const grid = document.getElementById("osGrid");
+  grid.innerHTML = systems.map(s => `
+    <article class="os${s.id === mine ? " mine" : ""}" id="os-${s.id}">
+      <h3>${icons[s.id]}${s.name}</h3>
+      <p class="req">${s.req}</p>
+      <span class="tag">Für dein System</span>
+      <ul class="files">${s.files.map((f, i) => `
+        <li><a class="${i === 0 ? "first" : ""}" href="${REL + f[0]}" target="_blank" rel="noopener">
+          <span>${f[1]}</span><small>${f[2]}</small></a></li>`).join("")}
+      </ul>
+      ${s.cmd ? `<div class="cmd"><code>${s.cmd}</code><button class="copy" type="button" data-cmd="${s.cmd}">Kopieren</button></div>` : ""}
+      <p class="hint">${s.hint}</p>
+    </article>`).join("");
+
+  document.getElementById("flist").innerHTML = features.map(f => `<div><h4>${f[0]}</h4><p>${f[1]}</p></div>`).join("");
+
+  if (mine) {
+    const s = systems.find(x => x.id === mine);
+    const btn = document.getElementById("heroBtn");
+    btn.href = REL + s.files[0][0];
+    btn.target = "_blank";
+    btn.rel = "noopener";
+    btn.textContent = "Herunterladen für " + s.name;
+    document.getElementById("heroNote").innerHTML = 'Version 1.0.0 · ' + s.files[0][2] + ' · <a href="#download">andere Systeme</a>';
+  }
+
+  grid.addEventListener("click", async e => {
+    const b = e.target.closest(".copy");
+    if (!b) return;
+    try {
+      await navigator.clipboard.writeText(b.dataset.cmd);
+      b.textContent = "Kopiert";
+    } catch (err) {
+      const code = b.previousElementSibling;
+      const r = document.createRange();
+      r.selectNodeContents(code);
+      const sel = getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      b.textContent = "Markiert";
+    }
+    setTimeout(() => { b.textContent = "Kopieren"; }, 1800);
+  });
+}
+</script>
+</body>
+</html>

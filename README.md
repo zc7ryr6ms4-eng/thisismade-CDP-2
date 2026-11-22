@@ -78,6 +78,11 @@ bash build-deb.sh                  # .deb nach dist/ bauen
 Jeder Push wird auf GitHub Actions mit echtem GTK4 und GStreamer getestet
 (Abspielen, Tempo, Cue, Screenshot); ein Tag `v*` baut .deb und Snap und veröffentlicht ein Release.
 
+## Ältere Version
+
+Version 1 („Thisismade CD Player“) mit Linux-, macOS- und Windows-11-Fassung liegt als Archiv unter
+[thisismade-CDP-1](https://github.com/zc7ryr6ms4-eng/thisismade-CDP-1).
+
 ## Projektaufbau
 
 * `tmplayer/` – Linux-Version (Python, GTK4, GStreamer)

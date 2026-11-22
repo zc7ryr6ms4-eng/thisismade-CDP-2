@@ -21,11 +21,7 @@ import cairo  # noqa: E402
 from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk  # noqa: E402
 
 from . import face  # noqa: E402
-from . import face_brick  # noqa: E402
-from . import face_minimal  # noqa: E402
-
-SKINS = {"minimal": face_minimal, "brick": face_brick, "classic": face}
-SKIN_NAMES = {"minimal": "nInInAL", "brick": "bAUStEInE", "classic": "CLASSIC"}
+from . import face_minimal as design  # noqa: E402
 from .engine import Engine, probe_cd  # noqa: E402
 from .mpris import Mpris  # noqa: E402
 
@@ -90,7 +86,8 @@ class PlayerApp(Gtk.Application):
         super().__init__(application_id=APP_ID, flags=Gio.ApplicationFlags.HANDLES_OPEN)
         GLib.set_application_name(APP_NAME)
         self.win = None
-        self.skin = face_minimal
+        self._res_t = 0.0
+        self._res_cache = ""
         self.engine = None
         self.mpris = None
         self.tracks = []            # [{uri, title, artist, album, ...}]
@@ -158,7 +155,6 @@ class PlayerApp(Gtk.Application):
                          ("eject", lambda *_: self.eject()),
                          ("help", lambda *_: self.show_help()),
                          ("about", lambda *_: self.show_about()),
-                         ("skin", lambda *_: self.toggle_skin()),
                          ("quit", lambda *_: self.quit_app())):
             a = Gio.SimpleAction.new(name, None)
             a.connect("activate", cb)
@@ -211,7 +207,7 @@ class PlayerApp(Gtk.Application):
         surf = cairo.ImageSurface(cairo.FORMAT_ARGB32, face.CANVAS_W, face.CANVAS_H)
         cr = cairo.Context(surf)
         cr.translate(face.MARGIN_X, face.MARGIN_TOP)
-        self.skin.draw(cr, self.state())
+        design.draw(cr, self.state())
         surf.write_to_png(out)
         ok = (res["state"] == "playing" and res["pos1_s"] > 0.5 and res["pos2_s"] > res["pos1_s"]
               and res["levels"] > 5 and res["tracks"] == 1 and res["cue"])
@@ -262,7 +258,6 @@ class PlayerApp(Gtk.Application):
         self.time_mode = int(s.get("time_mode", 0))
         self.cues = {k: v for k, v in s.get("cues", {}).items() if isinstance(v, list) and len(v) == 3}
         self.zoom = float(s.get("zoom", 0.0))
-        self.skin = SKINS.get(s.get("skin", "minimal"), face_minimal)
 
     def _save_settings(self):
         s = {
@@ -271,7 +266,6 @@ class PlayerApp(Gtk.Application):
             "stretch": self.engine.stretch if self.engine else False,
             "cues": {k: v for k, v in self.cues.items() if any(x is not None for x in v)},
             "zoom": self.win.current_zoom() if self.win else self.zoom,
-            "skin": next(k for k, v in SKINS.items() if v is self.skin),
             "uris": [t["uri"] for t in self.tracks if t["uri"].startswith("file://")][:5000],
             "index": self.index,
             "position": int(self.engine.position()) if self.engine else 0,
@@ -525,14 +519,6 @@ class PlayerApp(Gtk.Application):
     def toggle_time_mode(self):
         self.time_mode = 1 - self.time_mode
         self.flash("ELAPSEd" if self.time_mode == 0 else "rEnAIn", 0.8)
-
-    def toggle_skin(self):
-        keys = list(SKINS)
-        cur = next(k for k, v in SKINS.items() if v is self.skin)
-        nxt = keys[(keys.index(cur) + 1) % len(keys)]
-        self.skin = SKINS[nxt]
-        self.flash(SKIN_NAMES[nxt], 0.8)
-        self.redraw()
 
     def toggle_stretch(self):
         self.engine.set_stretch(not self.engine.stretch)
@@ -803,7 +789,7 @@ class PlayerApp(Gtk.Application):
 
     def _res_text(self):
         now = time.monotonic()
-        if now - getattr(self, "_res_t", 0) > 1.0:      # Caps höchstens 1× pro Sekunde abfragen
+        if now - self._res_t > 1.0:      # Caps höchstens 1× pro Sekunde abfragen
             self._res_t = now
             self._res_cache = self.engine.resolution() if self.has_tracks() else ""
         return self._res_cache
@@ -1008,7 +994,6 @@ class PlayerWindow(Gtk.ApplicationWindow):
         sec.append("Wiederholen umschalten", "app.repeat")
         sec.append("Zufall umschalten", "app.shuffle")
         sec.append("Varispeed / Time Stretch", "app.stretch")
-        sec.append("Design wechseln (Minimal / Bausteine / Klassisch)", "app.skin")
         menu.append_section(None, sec)
         sec = Gio.Menu()
         sec.append("Bedienung", "app.help")
@@ -1059,21 +1044,21 @@ class PlayerWindow(Gtk.ApplicationWindow):
     def _draw(self, _area, cr, w, h):
         s, ox, oy = self._fit(w, h)
         self._fit_cache = (s, ox, oy)
-        key = (w, h, self.app.skin.__name__)
+        key = (w, h)
         if self._bg is None or self._bg_key != key:
             self._bg = cr.get_target().create_similar(cairo.CONTENT_COLOR_ALPHA, w, h)
             bc = cairo.Context(self._bg)
             bc.translate(ox, oy)
             bc.scale(s, s)
             bc.translate(face.MARGIN_X, face.MARGIN_TOP)
-            self.app.skin.draw_static(bc)
+            design.draw_static(bc)
             self._bg_key = key
         cr.set_source_surface(self._bg, 0, 0)
         cr.paint()
         cr.translate(ox, oy)
         cr.scale(s, s)
         cr.translate(face.MARGIN_X, face.MARGIN_TOP)
-        self.app.skin.draw_dynamic(cr, self.app.state())
+        design.draw_dynamic(cr, self.app.state())
 
     def _tick(self, widget, clock):
         t = clock.get_frame_time() / 1e6
@@ -1482,8 +1467,6 @@ KEY LOCK an = nur das Tempo ändert sich, die Tonhöhe bleibt (Time Stretch).
 
 <b>Display</b> TRACK = aktueller Titel · TOTAL = Anzahl Titel · TIME = Minuten:Sekunden.
 Rechts leuchten REPEAT, SHUFFLE, KEY LOCK, PAUSE und REMAIN (Restzeit). Klick aufs Display: Zeitmodus.
-
-<b>Design</b> Rechtsklick → „Design wechseln“: Minimal (Weiß/Orange), Bausteine (Weiß/Rot) oder Klassisch (Weiß).
 
 <b>Oben</b> <b>OUTPUT</b> öffnet die GNOME-Klangeinstellungen (Ausgabegerät) · <b>HELP</b> diese Hilfe ·
 <b>POWER</b> Standby, gedrückt halten = Beenden · <b>MEDIA</b>-LED: mit der GNOME-Mediensteuerung verbunden

@@ -2,12 +2,6 @@
 
 ![thisismade cdp-2](data/screenshot.png)
 
-Unter Linux gibt es drei Designs (Rechtsklick → „Design wechseln“) – Minimal in Weiß/Orange (Standard), Bausteine und Klassisch:
-
-![Minimal-Design](data/screenshot-minimal.png)
-
-![Baustein-Design](data/screenshot-brick.png)
-
 Ein Musikplayer für **Windows 11**, **macOS** und **Ubuntu/GNOME**, der wie ein professionelles CD-Deck funktioniert:
 drehende Disc zum Scratchen, rotes LED-Display mit Pegelanzeige, Tempo-Fader mit Key Lock,
 drei Memory-Cues, Shuttle-Suchlauf, Ziffernblock für die direkte Titelwahl, Wiederholen und Zufall.

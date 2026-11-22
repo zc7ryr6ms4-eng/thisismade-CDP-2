@@ -31,9 +31,6 @@ Architecture: all
 Installed-Size: $SIZE
 Maintainer: Thisismade <noreply@github.com>
 Homepage: https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2
-Provides: thisismade-cd-player
-Conflicts: thisismade-cd-player
-Replaces: thisismade-cd-player
 Depends: python3 (>= 3.10), python3-gi, python3-gi-cairo, python3-cairo, gir1.2-gtk-4.0, gir1.2-gdkpixbuf-2.0, gir1.2-gstreamer-1.0, gstreamer1.0-plugins-base, gstreamer1.0-plugins-good
 Recommends: gstreamer1.0-plugins-bad, gstreamer1.0-libav, gstreamer1.0-pipewire | gstreamer1.0-pulseaudio
 Description: CD-Player-Software für GNOME

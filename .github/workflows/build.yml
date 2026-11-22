@@ -13,6 +13,11 @@ on:
         description: "Tag eines bestehenden Releases, an das die Installer angehängt werden (leer = keins)"
         required: false
         default: ""
+      build_snap:
+        description: "Snap mitbauen (dauert ca. 40 Minuten)"
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: write
@@ -71,6 +76,8 @@ jobs:
   snap:
     name: Snap
     needs: test
+    # Nur auf Wunsch: Actions → Build & Release → Run workflow → „Snap mitbauen“
+    if: github.event_name == 'workflow_dispatch' && inputs.build_snap
     runs-on: ubuntu-24.04
     env:
       SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}

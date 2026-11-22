@@ -281,21 +281,22 @@ comp_sys = [
      "files": [[ACT, "Installer „thisismade-macOS-Installer“", ".pkg"],
                [ACT, "Build-Artefakt „thisismade-macOS“", "VST3 · AU"]],
      "steps": ["Den neuesten erfolgreichen Build öffnen.",
-               "Unter <em>Artifacts</em> „thisismade-macOS-Installer“ laden und die .pkg öffnen.",
+               "Unter <em>Artifacts</em> „thisismade-macOS-Installer“ laden und <code>thisismade-1.0.0-macOS.pkg</code> öffnen.",
                "Der Installer legt VST3 und AU in <code>/Library/Audio/Plug-Ins</code>."],
-     "hint": "Nicht signiert: Systemeinstellungen → Datenschutz &amp; Sicherheit → „Dennoch öffnen“."},
+     "hint": "Nicht signiert: Systemeinstellungen → Datenschutz &amp; Sicherheit → „Dennoch öffnen“, oder im Terminal <code>xattr -dr com.apple.quarantine</code> auf das Plugin anwenden."},
     {"id": "lin", "name": "Linux", "req": "VST3 und Standalone · z. B. Ubuntu mit REAPER",
      "files": [[ACT, "Build-Artefakt „thisismade-Linux“", "VST3"],
                [RC + "/archive/refs/heads/main.zip", "Quellcode als .zip", "zum Selberbauen"]],
      "cmd": "./build-linux.sh",
-     "hint": "Im entpackten Quellcode ausführen: baut VST3 und Standalone, testet und kopiert nach <code>~/.vst3</code>."},
+     "hint": "Im entpackten Quellcode ausführen: baut VST3 und Standalone, testet und kopiert nach <code>~/.vst3</code>. Danach in REAPER die Plugins neu einlesen."},
 ]
 comp_feats = [
     ("Limiter", "LIMIT IN, Threshold +4 bis +15 dBu, Recovery 50 ms bis a2, Attack fast oder slow."),
-    ("Kompressor", "Threshold −20 bis +10 dBu, Ratio 1,5:1 bis 6:1, Recovery bis a2, Gain 0 bis 20 dB."),
+    ("Kompressor", "COMPRESS IN, Threshold −20 bis +10 dBu, Ratio 1,5:1 bis 6:1, Recovery bis a2, Attack fast oder slow, Gain 0 bis 20 dB."),
     ("Gerastert wie das Original", "Jeder Regler rastet in den Schritten der Hardware ein, pro Kanal A und B."),
     ("Auto Gain", "Gleicht die Ausgangslautheit über etwa 3 s an den Eingang an, für faire A/B-Vergleiche."),
     ("Stereo Link", "Koppelt beide Sidechains; Kanal A steuert dann beide Kanäle."),
+    ("Kalibrierung", "0 dBFS entspricht wahlweise +14 bis +24 dBu, passend zum Pegel deiner DAW."),
     ("Zeigerinstrumente", "Gain-Reduction-Meter je Kanal mit Nadelträgheit und LIMIT-LED."),
 ]
 measures = [

@@ -27,15 +27,21 @@ if [[ -z "$DEB" && -f "$HERE/build-deb.sh" ]]; then
 fi
 
 if [[ -z "$DEB" ]]; then
-  echo "==> Lade neueste Version von github.com/$REPO"
-  URL="$(wget -qO- "https://api.github.com/repos/$REPO/releases/latest" \
-        | grep -o '"browser_download_url": *"[^"]*_all\.deb"' | head -1 | cut -d'"' -f4)"
-  if [[ -z "$URL" ]]; then
-    echo "Kein Release gefunden." >&2
-    exit 1
+  echo "==> Suche neuestes Release auf github.com/$REPO"
+  URL="$(wget -qO- "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null \
+        | grep -o '"browser_download_url": *"[^"]*_all\.deb"' | head -1 | cut -d'"' -f4 || true)"
+  if [[ -n "$URL" ]]; then
+    DEB="$TMP/$(basename "$URL")"
+    wget -q --show-progress -O "$DEB" "$URL"
+  else
+    # Noch kein Release: aktuellen Stand von GitHub laden und das Paket hier bauen
+    echo "==> Kein Release gefunden – lade aktuellen Stand und baue das Paket"
+    wget -qO "$TMP/src.tar.gz" "https://github.com/$REPO/archive/refs/heads/main.tar.gz"
+    tar xzf "$TMP/src.tar.gz" -C "$TMP"
+    SRC="$(find "$TMP" -maxdepth 1 -type d -name '*-main' | head -1)"
+    bash "$SRC/build-deb.sh"
+    DEB="$(ls "$SRC"/dist/thisismade-cdp-2_*_all.deb | sort -V | tail -1)"
   fi
-  DEB="$TMP/$(basename "$URL")"
-  wget -q --show-progress -O "$DEB" "$URL"
 fi
 
 echo "==> Installiere $(basename "$DEB") (fragt nach deinem Passwort)"

@@ -1,0 +1,185 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  release:
+    types: [published]     # Release auf GitHub veröffentlichen → alle Installer werden angehängt
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "Tag eines bestehenden Releases, an das die Installer angehängt werden (leer = keins)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+env:
+  GSK_RENDERER: cairo
+
+jobs:
+  test:
+    name: Selbsttest (Ubuntu 24.04, echtes GTK4 + GStreamer)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Abhängigkeiten
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-gi python3-gi-cairo python3-cairo gir1.2-gtk-4.0 \
+            gir1.2-gstreamer-1.0 gstreamer1.0-plugins-base gstreamer1.0-plugins-good \
+            gstreamer1.0-plugins-bad xvfb dbus-x11 fonts-inter
+      - name: Testton erzeugen
+        run: python3 tests/make_tone.py "$RUNNER_TEMP/tone.wav"
+      - name: Player starten, abspielen, Tempo + Cue prüfen, Screenshot
+        run: |
+          TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$PWD/screenshot-ci.png" \
+            timeout 60 dbus-run-session -- xvfb-run -a python3 -m tmplayer
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot
+          path: screenshot-ci.png
+
+  deb:
+    name: .deb-Paket
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Metadaten prüfen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y desktop-file-utils appstream
+          desktop-file-validate data/io.github.thisismade.cdp2.desktop
+          appstreamcli validate --no-net --pedantic data/io.github.thisismade.cdp2.metainfo.xml || true
+      - name: Bauen
+        run: bash build-deb.sh
+      - name: Installation testen
+        run: |
+          sudo apt-get install -y ./dist/*.deb xvfb dbus-x11
+          python3 tests/make_tone.py "$RUNNER_TEMP/tone.wav"
+          TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$RUNNER_TEMP/s.png" \
+            timeout 60 dbus-run-session -- xvfb-run -a thisismade-cdp-2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+
+  snap:
+    name: Snap
+    needs: test
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snapcore/action-build@v1
+        id: build
+      - name: Prüfen – nur Wayland, keine X11-Schnittstelle
+        run: |
+          unsquashfs -n -d snapcheck "${{ steps.build.outputs.snap }}" meta/snap.yaml
+          cat snapcheck/meta/snap.yaml
+          if grep -qE '^\s*-\s*x11\s*$' snapcheck/meta/snap.yaml; then echo "x11 gefunden!"; exit 1; fi
+          grep -q 'GDK_BACKEND: wayland' snapcheck/meta/snap.yaml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: snap
+          path: ${{ steps.build.outputs.snap }}
+
+  macos:
+    name: macOS-App (Universal, .dmg)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bauen
+        run: bash macos/build.sh --dmg
+      - name: Start-Test (App startet und läuft 5 s)
+        run: |
+          "macos/build/thisismade cdp-2.app/Contents/MacOS/thisismade-cdp-2" &
+          PID=$!
+          sleep 5
+          kill -0 $PID
+          kill $PID
+      - name: Installationspaket (.pkg, fertig kompiliert)
+        run: |
+          pkgbuild --component "macos/build/thisismade cdp-2.app" --install-location /Applications \
+            --identifier io.github.thisismade.cdp2 --version 1.0.0 macos/build/component.pkg
+          productbuild --package macos/build/component.pkg macos/build/thisismade-cdp-2-1.0.0.pkg
+          pkgutil --payload-files macos/build/thisismade-cdp-2-1.0.0.pkg | head -5
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dmg
+          path: macos/build/*.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pkg
+          path: macos/build/thisismade-cdp-2-1.0.0.pkg
+
+  windows:
+    name: Windows 11 (Setup.exe)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Bauen (self-contained, eine .exe)
+        working-directory: windows
+        run: dotnet publish thisismade-cdp-2.csproj -c Release -o publish
+      - name: Selbsttest (abspielen, Tempo, Key Lock, Cue, Screenshot)
+        shell: pwsh
+        working-directory: windows
+        run: |
+          python ../tests/make_tone.py "$env:RUNNER_TEMP\tone.wav"
+          $env:TMPLAYER_SELFTEST = "$env:RUNNER_TEMP\tone.wav"
+          $env:TMPLAYER_SCREENSHOT = "$PWD\screenshot-windows.png"
+          $env:TMPLAYER_RESULT = "$PWD\selftest.txt"
+          $p = Start-Process -FilePath "publish\thisismade-cdp-2.exe" -PassThru
+          $null = $p.Handle
+          if (-not $p.WaitForExit(90000)) { $p.Kill(); Write-Error "Zeitüberschreitung"; exit 1 }
+          if (Test-Path selftest.txt) { Get-Content selftest.txt }
+          exit $p.ExitCode
+      - name: Installer bauen (Inno Setup)
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /DAppVersion=1.0.0 windows\installer.iss
+          Compress-Archive -Path windows\publish\thisismade-cdp-2.exe, LICENSE -DestinationPath windows\output\thisismade-cdp-2-portable-win-x64.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            windows/output/*.exe
+            windows/output/*.zip
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screenshot-windows
+          path: windows/screenshot-windows.png
+
+  release:
+    name: GitHub-Release
+    if: always() && needs.deb.result == 'success' && (github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v') || inputs.release_tag != '')
+    needs: [deb, snap, macos, windows]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.release_tag || github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: false
+          files: |
+            artifacts/deb/*.deb
+            artifacts/snap/*.snap
+            artifacts/dmg/*.dmg
+            artifacts/pkg/*.pkg
+            artifacts/windows/*.exe
+            artifacts/windows/*.zip
+            install.sh
+            install-mac.sh

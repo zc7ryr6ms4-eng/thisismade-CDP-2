@@ -138,6 +138,7 @@ SCRIPT = """
   const ua = navigator.userAgent || "";
   const mine = /Windows/i.test(ua) ? "win" : /Mac OS X|Macintosh/i.test(ua) ? "mac" : /Linux|X11/i.test(ua) && !/Android/i.test(ua) ? "lin" : "";
   const grid = document.getElementById("osGrid");
+  if (systems.length === 1) grid.classList.add("one");
   grid.innerHTML = systems.map(s => `
     <article class="os${s.id === mine ? " mine" : ""}" id="os-${s.id}">
       <h3>${icons[s.id]}${s.name}</h3>
@@ -152,14 +153,14 @@ SCRIPT = """
       <p class="hint">${s.hint}</p>
     </article>`).join("");
   const heroAuto = %HEROAUTO%;
-  if (mine && heroAuto) {
-    const s = systems.find(x => x.id === mine);
+  const s = systems.length === 1 ? systems[0] : systems.find(x => x.id === mine);
+  if (s && heroAuto) {
     const btn = document.getElementById("heroBtn");
     btn.href = s.files[0][0];
     btn.target = "_blank";
     btn.rel = "noopener";
     btn.textContent = heroAuto + " " + s.name;
-    document.getElementById("heroNote").innerHTML = %VERSION% + " · " + s.files[0][2] + ' · <a href="#download">andere Systeme</a>';
+    document.getElementById("heroNote").innerHTML = %VERSION% + " · " + s.files[0][2] + (systems.length > 1 ? ' · <a href="#download">andere Systeme</a>' : "");
   }
   grid.addEventListener("click", async e => {
     const b = e.target.closest(".copy");
@@ -199,20 +200,10 @@ UNSIGNED = ("Die Installer sind nicht kostenpflichtig signiert. Windows zeigt be
 R2 = GH + "thisismade-CDP-2/releases/latest/download/"
 RAW2 = "https://raw.githubusercontent.com/zc7ryr6ms4-eng/thisismade-CDP-2/main/"
 cdp2_sys = [
-    {"id": "win", "name": "Windows 11", "req": "auch Windows 10 · 64 Bit · .NET ist enthalten",
-     "files": [[R2 + "thisismade-cdp-2-Setup-1.0.0.exe", "Setup (empfohlen)", "68 MB"],
-               [R2 + "thisismade-cdp-2-portable-win-x64.zip", "Portable, ohne Installation", "68 MB"]],
-     "hint": "Setup starten: legt den Player im Startmenü an und trägt ihn unter „Öffnen mit“ ein."},
-    {"id": "mac", "name": "macOS", "req": "ab macOS 13 Ventura · Apple Silicon und Intel",
-     "files": [[R2 + "thisismade-cdp-2-1.0.0.pkg", "Installationspaket (empfohlen)", "0,6 MB"],
-               [R2 + "thisismade-cdp-2.dmg", "Disk-Image", "0,9 MB"]],
-     "cmd": "curl -fsSL " + RAW2 + "install-mac.sh | bash",
-     "hint": "Oder im Terminal: lädt die App, legt sie in Programme und startet sie."},
     {"id": "lin", "name": "Ubuntu", "req": "ab Ubuntu 24.04 · GNOME",
-     "files": [[R2 + "thisismade-cdp-2_1.0.0_all.deb", "Debian-Paket (empfohlen)", "29 KB"],
-               [R2 + "thisismade-cdp-2_1.0.0_amd64.snap", "Snap, nur Wayland", "122 MB"]],
+     "files": [[R2 + "thisismade-cdp-2_1.0.0_all.deb", "Debian-Paket", "29 KB"]],
      "cmd": "wget -qO- " + RAW2 + "install.sh | bash",
-     "hint": "Oder im Terminal: installiert den Player samt allem, was er braucht."},
+     "hint": "Doppelt anklicken öffnet das App-Zentrum. Oder im Terminal: installiert den Player samt allem, was er braucht."},
 ]
 cdp_feats = [
     ("Drehende Disc", "Klick spielt oder pausiert, Drehen mit der Maus scratcht durch den Titel."),
@@ -220,13 +211,13 @@ cdp_feats = [
     ("Memory A · B · C", "Drei Cue-Punkte pro Titel, gespeichert. Gedrückt halten setzt neu."),
     ("Shuttle", "Vor- und Rücklauf bis 16-fach, je weiter der Schieber, desto schneller."),
     ("Rotes Display", "Titel als Laufschrift, Zeit, Restzeit, Auflösung, Tempo, Lautstärke und Pegel L/R."),
-    ("Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von Windows, macOS und GNOME."),
+    ("Mediensteuerung", "Medientasten, Sperrbildschirm und die Mediensteuerung von GNOME."),
 ]
 page = (head("thisismade cdp-2") + nav("index.html", "thisismade-CDP-2")
         + hero_text("cdp-2", "CD-Player-Software",
                     "Ein Musikplayer, der sich wie ein CD-Deck bedient: drehende Disc, rotes Display, Tempo mit Key Lock, "
-                    "Memory-Cues und Shuttle. Für Windows&nbsp;11, macOS und Ubuntu.",
-                    "Herunterladen", "Version 1.0.0 · kostenlos · BSD-Lizenz")
+                    "Memory-Cues und Shuttle. Für Ubuntu Linux.",
+                    "Herunterladen", "Version 1.0.0 · .deb · kostenlos · BSD-Lizenz")
         + showcase("player.png", 1256, 724,
                    "Die Gerätefront von thisismade cdp-2: weiße Front mit drehender Disc, rotem Display, Ziffernblock, "
                    "Laufwerkstasten, Lautstärkeregler und Tempo-Fader",
@@ -235,8 +226,8 @@ page = (head("thisismade cdp-2") + nav("index.html", "thisismade-CDP-2")
                     "zeigt Titel, Spielzeit, Auflösung und Pegel.",
                     "Alles wird bedient wie am echten Deck: Titelnummer tippen und ENTER, Cue-Punkte auf A, B und C, "
                     "Tempo am Fader."])
-        + downloads("Alle Dateien kommen direkt aus dem GitHub-Release von thisismade cdp-2.",
-                    UNSIGNED + ' Ältere Version: <a href="cdp-1.html">thisismade CDP-1</a>.')
+        + downloads("Das .deb-Paket kommt direkt aus dem GitHub-Release von thisismade cdp-2.",
+                    'Ältere Version mit Windows- und Mac-Fassung: <a href="cdp-1.html">thisismade CDP-1</a>.')
         + features("Spielt Ordner, Einzeldateien, Playlists und Audio-CDs. Formate: MP3, FLAC, WAV, AIFF, AAC/M4A, "
                    "ALAC und mehr.", cdp_feats)
         + footer("thisismade cdp-2", "thisismade-CDP-2")

@@ -42,6 +42,16 @@ jobs:
         run: |
           TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$PWD/screenshot-ci.png" \
             timeout 60 dbus-run-session -- xvfb-run -a ./target/release/thisismade-cdp-2r
+      - name: Selbsttest unter Wayland (Weston headless, GDK_BACKEND=wayland)
+        run: |
+          sudo apt-get install -y weston
+          export XDG_RUNTIME_DIR="$RUNNER_TEMP/xdg" && mkdir -p -m 700 "$XDG_RUNTIME_DIR"
+          weston --backend=headless --socket=wayland-cdp --width=1600 --height=1000 &
+          for i in $(seq 1 50); do [ -S "$XDG_RUNTIME_DIR/wayland-cdp" ] && break; sleep 0.2; done
+          WAYLAND_DISPLAY=wayland-cdp GDK_BACKEND=wayland \
+          TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$RUNNER_TEMP/w.png" \
+            timeout 60 dbus-run-session -- ./target/release/thisismade-cdp-2r
+          kill %1 || true
       - name: Look-Vergleich mit dem Python-Original (thisismade cdp-2)
         run: |
           sudo apt-get install -y python3-cairo

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.thisismade.cdp2r</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>BSD-3-Clause</project_license>
+  <name>thisismade CDP-2r</name>
+  <summary>CD player software with tempo, key lock, memory cues and shuttle</summary>
+  <summary xml:lang="de">CD-Player-Software mit Tempo, Key Lock, Memory-Cues und Shuttle</summary>
+  <description>
+    <p>A music player for GNOME that works like a professional CD deck: a spinning disc you can scratch,
+    a VFD-style display with level meter, tempo fader with key lock, three memory cues, shuttle search,
+    direct track entry, repeat and shuffle. Plays folders, files, playlists and audio CDs.</p>
+    <p xml:lang="de">Ein Musikplayer für GNOME, der wie ein professionelles CD-Deck funktioniert: drehende Disc
+    zum Scratchen, Display mit Pegelanzeige, Tempo-Fader mit Key Lock, drei Memory-Cues, Shuttle-Suchlauf,
+    direkte Titelwahl, Wiederholen und Zufall. Spielt Ordner, Dateien, Playlists und Audio-CDs.</p>
+  </description>
+  <launchable type="desktop-id">io.github.thisismade.cdp2r.desktop</launchable>
+  <url type="homepage">https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2r</url>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/zc7ryr6ms4-eng/thisismade-CDP-2r/main/data/screenshot.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="1.0.0" date="2026-11-23"/>
+  </releases>
+</component>

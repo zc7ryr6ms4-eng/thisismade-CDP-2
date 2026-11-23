@@ -1,0 +1,83 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GSK_RENDERER: cairo
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    name: Bauen + Selbsttest (Ubuntu 24.04, echtes GTK4 + GStreamer)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Abhängigkeiten
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-4-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-bad \
+            xvfb dbus-x11 fonts-inter desktop-file-utils appstream
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Kompilieren
+        run: cargo build --release
+      - name: Unit-Tests
+        run: cargo test --release
+      - name: Metadaten prüfen
+        run: |
+          desktop-file-validate data/io.github.thisismade.cdp2r.desktop
+          appstreamcli validate --no-net --pedantic data/io.github.thisismade.cdp2r.metainfo.xml || true
+      - name: Testton erzeugen
+        run: python3 tests/make_tone.py "$RUNNER_TEMP/tone.wav"
+      - name: Player starten, abspielen, Tempo + Cue prüfen, Screenshot
+        run: |
+          TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$PWD/screenshot-ci.png" \
+            timeout 60 dbus-run-session -- xvfb-run -a ./target/release/thisismade-cdp-2r
+      - name: .deb bauen
+        run: REBUILD=0 bash build-deb.sh
+      - name: Installation testen
+        run: |
+          sudo apt-get install -y ./dist/*.deb
+          TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$RUNNER_TEMP/s.png" \
+            timeout 60 dbus-run-session -- xvfb-run -a thisismade-cdp-2r
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshot
+          path: screenshot-ci.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: deb
+          path: dist/*.deb
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cargo-lock
+          path: Cargo.lock
+
+  release:
+    name: GitHub-Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: false
+          files: |
+            artifacts/deb/*.deb
+            install.sh

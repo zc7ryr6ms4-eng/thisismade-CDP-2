@@ -1,0 +1,21 @@
+[Desktop Entry]
+Type=Application
+Name=thisismade CDP-2r
+GenericName=Musikplayer
+GenericName[en]=Music Player
+Comment=CD-Player-Software mit Tempo, Key Lock, Memory-Cues und Shuttle
+Comment[en]=CD player software with tempo, key lock, memory cues and shuttle
+Exec=thisismade-cdp-2r %U
+Icon=io.github.thisismade.cdp2r
+Terminal=false
+Categories=AudioVideo;Audio;Player;GTK;
+Keywords=music;cd;player;tempo;varispeed;musik;audio;mp3;flac;
+StartupNotify=true
+SingleMainWindow=true
+MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/opus;audio/x-opus+ogg;audio/x-wav;audio/wav;audio/aac;audio/mp4;audio/x-m4a;audio/x-aiff;audio/x-ms-wma;audio/x-ape;audio/x-wavpack;audio/x-matroska;audio/x-mpegurl;x-content/audio-cdda;
+Actions=OpenCD;
+
+[Desktop Action OpenCD]
+Name=Audio-CD abspielen
+Name[en]=Play audio CD
+Exec=thisismade-cdp-2r cdda://

@@ -1,0 +1,25 @@
+[package]
+name = "thisismade-cdp-2r"
+version = "1.0.0"
+edition = "2021"
+rust-version = "1.80"
+license = "BSD-3-Clause"
+description = "thisismade CDP-2r – CD-Player-Software für GNOME (Rust, GTK4, GStreamer)"
+homepage = "https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2r"
+repository = "https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2r"
+publish = false
+
+[[bin]]
+name = "thisismade-cdp-2r"
+path = "src/main.rs"
+
+[dependencies]
+gtk = { package = "gtk4", version = "0.9", features = ["v4_14"] }
+gst = { package = "gstreamer", version = "0.23" }
+cairo = { package = "cairo-rs", version = "0.20", features = ["png"] }
+serde_json = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true

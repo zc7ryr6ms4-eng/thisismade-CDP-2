@@ -23,10 +23,6 @@ pub const CANVAS_H: f64 = DEV_H + MARGIN_TOP + MARGIN_BOTTOM;
 
 pub const FONT: &str = "Inter";
 
-// Farben
-pub const TXT: Rgb = (0.22, 0.22, 0.24);
-pub const VFD_ON: Rgb = (1.0, 0.13, 0.08);
-pub const VFD_OFF: Rgb = (0.20, 0.04, 0.035);
 
 // ----------------------------------------------------------------- Layout
 pub const DISC_C: (f64, f64) = (320.0, 360.0);

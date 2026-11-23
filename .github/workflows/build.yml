@@ -42,6 +42,12 @@ jobs:
         run: |
           TMPLAYER_SELFTEST="$RUNNER_TEMP/tone.wav" TMPLAYER_SCREENSHOT="$PWD/screenshot-ci.png" \
             timeout 60 dbus-run-session -- xvfb-run -a ./target/release/thisismade-cdp-2r
+      - name: Look-Vergleich mit dem Python-Original (thisismade cdp-2)
+        run: |
+          sudo apt-get install -y python3-cairo
+          git clone -q --depth 1 https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2 "$RUNNER_TEMP/cdp2"
+          TMPLAYER_RENDER="$PWD/look-rust.png" ./target/release/thisismade-cdp-2r
+          python3 tests/compare_look.py "$RUNNER_TEMP/cdp2" look-rust.png look-python.png
       - name: .deb bauen
         run: REBUILD=0 bash build-deb.sh
       - name: Installation testen
@@ -64,7 +70,7 @@ jobs:
       - name: Paket + Screenshot auf Branch cdp-2r-dist ablegen
         if: github.event_name == 'push' && github.ref == 'refs/heads/cdp-2r'
         run: |
-          mkdir -p "$RUNNER_TEMP/dist" && cp dist/*.deb screenshot-ci.png Cargo.lock "$RUNNER_TEMP/dist/"
+          mkdir -p "$RUNNER_TEMP/dist" && cp dist/*.deb screenshot-ci.png look-rust.png look-python.png Cargo.lock "$RUNNER_TEMP/dist/"
           cd "$RUNNER_TEMP/dist"
           git init -q -b cdp-2r-dist
           git -c user.name="github-actions" -c user.email="actions@github.com" add -A

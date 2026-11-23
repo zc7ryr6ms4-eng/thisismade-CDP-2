@@ -71,7 +71,52 @@ funktionieren über MPRIS. Während der Wiedergabe wird der Ruhezustand verhinde
     )
 }
 
+/// TMPLAYER_RENDER=<datei.png>: zeichnet die Front mit einem festen Demo-Zustand
+/// (für den Pixelvergleich mit der Python-Fassung in der CI) und beendet sich.
+fn render_demo(out: &str) -> std::process::ExitCode {
+    let st = face::DrawState {
+        disc_loaded: true,
+        disc_angle: 0.5,
+        disc_lines: ["NIGHT DRIVE", "ARTIST NAME", "ALBUM TITLE", "TRACK 04 / 12", "FLAC"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect(),
+        bt_led: true,
+        power_on: true,
+        vu_l: 0.7,
+        vu_r: 0.6,
+        vu_peaks: [0.8, 0.75],
+        main_text: "004012003045".into(),
+        vs_text: "100".into(),
+        lv_text: "072".into(),
+        stretch: true,
+        cue_set: [true, false, true],
+        varispeed_norm: 0.5,
+        level_norm: 0.72,
+        repeat: 1,
+        title: "ARTIST – NIGHT DRIVE".into(),
+        resolution: "44.1 kHz · 24 bit · FLAC".into(),
+        ..Default::default()
+    };
+    let Ok(surf) = cairo::ImageSurface::create(cairo::Format::ARgb32, face::CANVAS_W as i32, face::CANVAS_H as i32)
+    else {
+        return std::process::ExitCode::FAILURE;
+    };
+    if let Ok(cr) = cairo::Context::new(&surf) {
+        cr.translate(face::MARGIN_X, face::MARGIN_TOP);
+        design::draw(&cr, &st);
+    }
+    surf.flush();
+    match std::fs::File::create(out).map(|mut f| surf.write_to_png(&mut f)) {
+        Ok(Ok(())) => std::process::ExitCode::SUCCESS,
+        _ => std::process::ExitCode::FAILURE,
+    }
+}
+
 fn main() -> std::process::ExitCode {
+    if let Ok(out) = std::env::var("TMPLAYER_RENDER") {
+        return render_demo(&out);
+    }
     if let Err(e) = gst::init() {
         eprintln!("GStreamer konnte nicht gestartet werden: {e}");
         return std::process::ExitCode::FAILURE;

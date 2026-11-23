@@ -125,9 +125,9 @@ impl Mpris {
             let w3 = Rc::downgrade(self);
             let res = conn
                 .register_object(PATH, &iface)
-                .method_call(move |_c, _sender, _path, iface, method, params, inv| {
+                .method_call(move |_c, _sender, _path, _iface, method, params, inv| {
                     if let Some(m) = w1.upgrade() {
-                        m.call(iface, method, &params);
+                        m.call(method, &params);
                     }
                     inv.return_value(None);
                 })
@@ -163,7 +163,7 @@ impl Mpris {
     }
 
     // --------------------------------------------------------------- Methoden
-    fn call(&self, _iface: &str, method: &str, params: &glib::Variant) {
+    fn call(&self, method: &str, params: &glib::Variant) {
         let Some(c) = self.app.upgrade() else { return };
         match method {
             "Raise" => c.mpris_raise(),

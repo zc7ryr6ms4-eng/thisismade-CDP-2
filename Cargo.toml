@@ -5,7 +5,6 @@ edition = "2021"
 rust-version = "1.80"
 license = "BSD-3-Clause"
 description = "thisismade CDP-2r – CD-Player-Software für GNOME (Rust, GTK4, GStreamer)"
-homepage = "https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2r"
 repository = "https://github.com/zc7ryr6ms4-eng/thisismade-CDP-2r"
 publish = false
 
